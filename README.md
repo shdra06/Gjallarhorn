@@ -8,12 +8,16 @@
 
 **Status:** under active development. See [docs/PLAN.md](docs/PLAN.md) for the full plan.
 
+**Result so far** ([details](docs/results.md)): in a real Bifrost with real agents and tools,
+**4 of 11 attacks cause real harm without Gjallarhorn, and 0 of 11 with it**. All 7 pieces of normal
+work still get done, with **zero false blocks**.
+
 | Done | Next |
 |---|---|
-| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | Demo world: real A2A agents and MCP tools, plus the attack lab |
-| Operator control API with a live event stream | AI co-pilot: incident explainer and rule suggester |
-| Bifrost plugin, running in real Bifrost v2.5.1 (16/16 integration checks pass) | 3D airspace console |
-| Feasibility spike ([results](docs/spike-results.md)) and [benchmarks](docs/benchmarks.md) | Published measurements, threat model, upstream PR |
+| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | AI co-pilot: incident explainer and rule suggester |
+| Operator control API with a live event stream and an enforce/monitor switch | 3D airspace console |
+| Bifrost plugin, running in real Bifrost v2.5.1 | Published measurements, threat model, upstream PR |
+| Demo world (4 A2A agents, 5 MCP tools) and an attack lab ([how it works](docs/attack-lab.md)) | Submission package |
 
 ## The problem
 
@@ -46,7 +50,9 @@ them is tricked, today's gateways can't answer basic questions:
 |---|---|
 | `engine/` | The core, in plain Go with no Bifrost dependency: identity, tickets, policy, lockdown, recorder, replay, control API |
 | `plugin/` | The Bifrost plugin: a thin adapter from Bifrost's hooks to the engine |
-| `deploy/` | Container build for Bifrost and the plugin; a dev image with a mock model and integration tests; the Phase 1 spike |
+| `demo/` | The demo company (A2A agents, MCP tools, effects ledger) and the attack lab |
+| `deploy/` | Container builds: Bifrost with the plugin, the full demo, a dev image with integration tests, the Phase 1 spike |
+| `results/` | Raw attack-lab reports behind every number we publish |
 | `docs/` | Plan, architecture, benchmarks, spike results |
 
 ## Developing

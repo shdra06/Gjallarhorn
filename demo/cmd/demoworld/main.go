@@ -21,6 +21,7 @@ func main() {
 	toolsAddr := flag.String("tools", "127.0.0.1:9100", "address of the MCP tool servers and the ledger")
 	supportVK := flag.String("support-key", envOr("SUPPORT_VK", "sk-bf-support-demo"), "support agent's virtual key")
 	billingVK := flag.String("billing-key", envOr("BILLING_VK", "sk-bf-billing-demo"), "billing agent's virtual key")
+	partnerVK := flag.String("partner-key", envOr("PARTNER_VK", "sk-bf-partner-demo"), "partner agent's virtual key")
 	flag.Parse()
 
 	ledger := &tools.Ledger{}
@@ -29,7 +30,7 @@ func main() {
 		log.Fatal(http.ListenAndServe(*toolsAddr, tools.Handler(ledger)))
 	}()
 
-	specs := agents.Specs(*supportVK, *billingVK)
+	specs := agents.Specs(*supportVK, *billingVK, *partnerVK)
 	for _, s := range specs {
 		if _, err := agents.New(s, *gatewayURL).Serve(*host); err != nil {
 			log.Fatalf("agent %s: %v", s.Name, err)

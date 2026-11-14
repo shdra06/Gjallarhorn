@@ -1,0 +1,163 @@
+{
+  "client": {
+    "a2a_external_client_url": "http://127.0.0.1:8080",
+    "a2a_private_allowlist": ["127.0.0.1", "localhost"]
+  },
+  "providers": {
+    "mock": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": { "chat_completion": true, "chat_completion_stream": true },
+        "request_path_overrides": {
+          "chat_completion": "/v1/chat/completions",
+          "chat_completion_stream": "/v1/chat/completions"
+        }
+      },
+      "network_config": { "base_url": "http://127.0.0.1:9000" },
+      "keys": [{ "name": "mock-key", "value": "mock-secret", "models": ["*"], "weight": 1.0 }]
+    }
+  },
+  "mcp": {
+    "max_protocol_version": "2025-06-18",
+    "client_configs": [
+      { "name": "orders",  "connection_type": "http", "auth_type": "none", "connection_string": "http://127.0.0.1:9100/mcp/orders",  "tools_to_execute": ["*"] },
+      { "name": "billing", "connection_type": "http", "auth_type": "none", "connection_string": "http://127.0.0.1:9100/mcp/billing", "tools_to_execute": ["*"] },
+      { "name": "email",   "connection_type": "http", "auth_type": "none", "connection_string": "http://127.0.0.1:9100/mcp/email",   "tools_to_execute": ["*"] },
+      { "name": "shell",   "connection_type": "http", "auth_type": "none", "connection_string": "http://127.0.0.1:9100/mcp/shell",   "tools_to_execute": ["*"] },
+      { "name": "web",     "connection_type": "http", "auth_type": "none", "connection_string": "http://127.0.0.1:9100/mcp/web",     "tools_to_execute": ["*"] }
+    ]
+  },
+  "governance": {
+    "virtual_keys": [
+      {
+        "id": "vk-chat", "name": "customer chat app", "value": "sk-bf-chat-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }],
+        "mcp_configs": [
+          { "mcp_client_name": "orders", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "web", "tools_to_execute": ["*"] }
+        ]
+      },
+      {
+        "id": "vk-priya", "name": "priya (operator)", "value": "sk-bf-priya-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }],
+        "mcp_configs": [
+          { "mcp_client_name": "orders", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "billing", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "email", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "shell", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "web", "tools_to_execute": ["*"] }
+        ]
+      },
+      {
+        "id": "vk-support", "name": "support agent", "value": "sk-bf-support-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }],
+        "mcp_configs": [
+          { "mcp_client_name": "orders", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "email", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "web", "tools_to_execute": ["*"] }
+        ]
+      },
+      {
+        "id": "vk-billing", "name": "billing agent", "value": "sk-bf-billing-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }],
+        "mcp_configs": [
+          { "mcp_client_name": "billing", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "email", "tools_to_execute": ["*"] }
+        ]
+      },
+      {
+        "id": "vk-research", "name": "research agent", "value": "sk-bf-research-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }],
+        "mcp_configs": [
+          { "mcp_client_name": "web", "tools_to_execute": ["*"] },
+          { "mcp_client_name": "email", "tools_to_execute": ["*"] }
+        ]
+      },
+      {
+        "id": "vk-partner", "name": "partner agent (third party)", "value": "sk-bf-partner-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }]
+      }
+    ]
+  },
+  "agents": [
+    {
+      "name": "support", "agent_card_url": "http://127.0.0.1:9201/.well-known/agent-card.json",
+      "enabled": true, "allow_by_default": false,
+      "virtual_key_ids": ["vk-chat", "vk-priya", "vk-billing"]
+    },
+    {
+      "name": "billing", "agent_card_url": "http://127.0.0.1:9202/.well-known/agent-card.json",
+      "enabled": true, "allow_by_default": false,
+      "virtual_key_ids": ["vk-support", "vk-priya"]
+    },
+    {
+      "name": "research", "agent_card_url": "http://127.0.0.1:9203/.well-known/agent-card.json",
+      "enabled": true, "allow_by_default": false, "forward_accepted_credential": true,
+      "virtual_key_ids": ["vk-chat", "vk-priya", "vk-support", "vk-billing"]
+    },
+    {
+      "name": "partner", "agent_card_url": "http://127.0.0.1:9204/.well-known/agent-card.json",
+      "enabled": true, "allow_by_default": false,
+      "virtual_key_ids": ["vk-chat", "vk-priya", "vk-support", "vk-billing"]
+    }
+  ],
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "gjallarhorn",
+      "path": "/app/plugins/gjallarhorn.so",
+      "config": {
+        "principals": [
+          { "id": "human:priya", "kind": "human", "labels": { "role": "operator" }, "virtual_keys": ["sk-bf-priya-demo"] },
+          { "id": "service:customer-chat", "kind": "service", "labels": { "trust": "external" }, "virtual_keys": ["sk-bf-chat-demo"] },
+          { "id": "agent:support", "kind": "agent", "virtual_keys": ["sk-bf-support-demo"], "agent_names": ["support"] },
+          { "id": "agent:billing", "kind": "agent", "virtual_keys": ["sk-bf-billing-demo"], "agent_names": ["billing"] },
+          { "id": "agent:research", "kind": "agent", "virtual_keys": ["sk-bf-research-demo"], "agent_names": ["research"] },
+          { "id": "agent:partner", "kind": "agent", "labels": { "trust": "external" }, "virtual_keys": ["sk-bf-partner-demo"], "agent_names": ["partner"] }
+        ],
+        "tickets": { "active_key": "demo-1", "keys": { "demo-1": "env:GJ_TICKET_KEY" }, "ttl": "10m" },
+        "recorder": { "path": "/app/data/gjallarhorn-flight.jsonl" },
+        "lockdown_file": "/app/data/gjallarhorn-lockdowns.json",
+        "control": {
+          "listen": "0.0.0.0:8787",
+          "admin_token": "env:GJ_ADMIN_TOKEN",
+          "allowed_origins": ["http://localhost:5173"]
+        },
+        "accept_labels": true,
+        "policy": {
+          "version": 1,
+          "guards": { "max_depth": 3 },
+          "rules": [
+            {
+              "id": "refunds-need-an-operator",
+              "description": "Refunds only when a human operator started the chain",
+              "effect": "deny",
+              "match": { "planes": ["mcp"], "targets": ["billing.refund*"] },
+              "unless": { "origin_kinds": ["human"], "origin_labels": { "role": "operator" } }
+            },
+            {
+              "id": "agents-never-run-shell",
+              "description": "No agent may run shell commands; trying locks it down",
+              "effect": "deny",
+              "lockdown": true,
+              "match": { "planes": ["mcp"], "actor_kinds": ["agent"], "targets": ["shell.*"] }
+            },
+            {
+              "id": "external-chains-email-only-via-support",
+              "description": "When an outside party started the chain, only the support agent may send email",
+              "effect": "deny",
+              "match": { "planes": ["mcp"], "targets": ["email.*"], "origin_labels": { "trust": "external" } },
+              "unless": { "actors": ["agent:support"] }
+            },
+            {
+              "id": "no-premium-models-for-research",
+              "description": "The research agent uses the standard model only",
+              "effect": "deny",
+              "match": { "planes": ["llm"], "actors": ["agent:research"], "targets": ["*premium*"] }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

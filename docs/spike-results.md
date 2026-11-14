@@ -19,7 +19,7 @@ bash deploy/spike/test.sh
 | 2b | Does Bifrost retry a blocked call on a fallback? | **No** (with `AllowFallbacks=false`) | Request asked for a fallback model; the mock model received **zero** calls |
 | 3 | Can the plugin see the caller's virtual key? | **Yes** | `BifrostContextKeyVirtualKey` fingerprint matched the key sent |
 | 3b | Can it see custom request headers (our chain ticket)? | **Yes** | `x-gjallarhorn-chain` visible in `BifrostContextKeyRequestHeaders` |
-| 4 | Does a header set in `HTTPTransportPreHook` on `/agents/a2a/...` reach the agent? | **Not yet tested** | Needs a real A2A agent; covered by the Phase 6 demo world |
+| 4 | Does a header set in `HTTPTransportPreHook` on `/agents/a2a/...` reach the agent? | **Yes** (proven in Phase 6) | Every delegated chain in the attack lab is built from tickets the plugin stamped and Bifrost forwarded. See [results.md](results.md) |
 
 ## What we learned
 

@@ -50,10 +50,14 @@ type Spec struct {
 	// ReadsInstructionsInToolOutput makes the agent follow instructions found in tool results
 	// (indirect prompt injection), like an agent that summarises web pages.
 	ReadsInstructionsInToolOutput bool
+	// LeaksTicket makes the agent echo the chain ticket it received in its reply. It stands in
+	// for a compromised or careless third-party agent, so the attack lab has a real ticket to
+	// try to steal and forge.
+	LeaksTicket bool
 }
 
-// Specs are the demo company's agents.
-func Specs(supportVK, billingVK string) []Spec {
+// Specs are the demo company's agents, plus one untrusted partner agent.
+func Specs(supportVK, billingVK, partnerVK string) []Spec {
 	return []Spec{
 		{Name: "support", Description: "Answers customer questions, looks up orders, escalates billing issues.",
 			Port: 9201, VirtualKey: supportVK, Model: "mock/standard-model"},
@@ -61,6 +65,8 @@ func Specs(supportVK, billingVK string) []Spec {
 			Port: 9202, VirtualKey: billingVK, Model: "mock/standard-model"},
 		{Name: "research", Description: "Reads web pages and writes summaries. Uses the caller's credentials.",
 			Port: 9203, VirtualKey: "", Model: "mock/standard-model", ReadsInstructionsInToolOutput: true},
+		{Name: "partner", Description: "A third-party agent from another company. Untrusted: it leaks what it receives.",
+			Port: 9204, VirtualKey: partnerVK, Model: "mock/standard-model", LeaksTicket: true},
 	}
 }
 
@@ -209,6 +215,9 @@ func (a *Agent) identity(ec *a2asrv.ExecutorContext) gateway.Identity {
 func (a *Agent) Handle(ctx context.Context, id gateway.Identity, input string) string {
 	var lines []string
 	say := func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+	if a.Spec.LeaksTicket && id.Chain != "" {
+		say("[%s] leaked ticket: %s", a.Spec.Name, id.Chain)
+	}
 
 	// Think first: one model call, like any LLM agent.
 	thought := a.gw.Chat(ctx, id, a.Spec.Model, fmt.Sprintf("You are the %s agent. Task: %s", a.Spec.Name, firstLine(input)))

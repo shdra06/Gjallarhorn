@@ -1,0 +1,22 @@
+# The full demo: Bifrost + Gjallarhorn, the demo company's agents and tools, a mock model and
+# the attack lab, in one container.
+#
+#   podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
+#   podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
+#   bash deploy/demo/run-lab.sh
+
+FROM golang:1.27.3-alpine3.24@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS build
+ENV CGO_ENABLED=0
+COPY demo/go.mod demo/go.sum /src/demo/
+RUN cd /src/demo && go mod download
+COPY demo/ /src/demo/
+RUN cd /src/demo && go build -trimpath -o /out/demoworld ./cmd/demoworld && go build -trimpath -o /out/attacklab ./cmd/attacklab
+COPY deploy/spike/mock/ /src/mock/
+RUN cd /src/mock && go build -trimpath -o /out/mock .
+
+FROM localhost/gjallarhorn-bifrost:latest
+COPY --from=build /out/ /app/
+COPY --chown=bifrost:bifrost deploy/demo/config.json /app/data/config.json
+COPY deploy/demo/run.sh /app/run.sh
+EXPOSE 8080 8787 9100
+ENTRYPOINT ["/bin/sh", "/app/run.sh"]
