@@ -2,7 +2,7 @@
 CONTAINER ?= podman
 VERSION   ?= 0.1.0-dev
 
-.PHONY: help test race cover bench fuzz fmt vet image dev-image dev-test spike spike-test
+.PHONY: help test race cover bench fuzz fmt vet image dev-image dev-test spike spike-test console demo-image demo lab
 
 help: ## List commands
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -42,3 +42,15 @@ spike: ## Build the Phase 1 feasibility spike
 
 spike-test: ## Run the Phase 1 feasibility checks
 	ENGINE=$(CONTAINER) bash deploy/spike/test.sh
+
+console: ## Type-check, test and build the operator console
+	cd console && npm ci && npm run typecheck && npm test && npm run build
+
+demo-image: image ## Build the full demo (plugin, console, agents, tools, attack lab)
+	$(CONTAINER) build -t gjallarhorn-demo -f deploy/demo/Containerfile .
+
+demo: ## Start the demo and print the console address
+	ENGINE=$(CONTAINER) bash deploy/demo/run-console.sh
+
+lab: ## Run the attack lab and the co-pilot fire drill
+	ENGINE=$(CONTAINER) bash deploy/demo/run-lab.sh

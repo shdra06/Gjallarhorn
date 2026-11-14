@@ -29,3 +29,9 @@ Thumbs.db
 node_modules/
 .next/
 .vite/
+
+# Console build output
+console/dist/
+
+# Local tool settings
+.claude/

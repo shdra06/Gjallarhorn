@@ -126,7 +126,9 @@
         "control": {
           "listen": "0.0.0.0:8787",
           "admin_token": "env:GJ_ADMIN_TOKEN",
-          "allowed_origins": ["http://localhost:5173"]
+          "allowed_origins": ["http://localhost:5173"],
+          "console_dir": "/app/console",
+          "demo_driver": "http://127.0.0.1:9300"
         },
         "accept_labels": true,
         "copilot": {

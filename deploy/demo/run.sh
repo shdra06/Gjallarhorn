@@ -7,8 +7,10 @@ set -e
 
 /app/mockmodel -addr 127.0.0.1:9000 &
 /app/demoworld -gateway http://127.0.0.1:8080 -host 127.0.0.1 -tools 0.0.0.0:9100 &
+# The console's demo panel reaches this driver through the control API (/demo/, admin token required).
+/app/attacklab -serve 127.0.0.1:9300 &
 
-for port in 9000 9100 9201 9202 9203 9204; do
+for port in 9000 9100 9201 9202 9203 9204 9300; do
   i=0
   until curl -s -o /dev/null "http://127.0.0.1:${port}/" 2>/dev/null; do
     i=$((i + 1))

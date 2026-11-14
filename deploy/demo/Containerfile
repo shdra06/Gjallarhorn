@@ -1,19 +1,31 @@
-# The full demo: Bifrost + Gjallarhorn, the demo company's agents and tools, a mock model (with
-# a scripted stand-in for the co-pilot's LLM) and the attack lab, in one container.
+# The full demo: Bifrost + Gjallarhorn, the operator console, the demo company's agents and tools,
+# a mock model (with a scripted stand-in for the co-pilot's LLM), the attack lab and its traffic
+# driver, in one container.
 #
 #   podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
 #   podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
-#   bash deploy/demo/run-lab.sh
+#   bash deploy/demo/run-console.sh     (the console, live)
+#   bash deploy/demo/run-lab.sh         (the attack lab and co-pilot drill)
 
 FROM golang:1.27.3-alpine3.24@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS build
 ENV CGO_ENABLED=0
 COPY demo/go.mod demo/go.sum /src/demo/
 RUN cd /src/demo && go mod download
 COPY demo/ /src/demo/
-RUN cd /src/demo && go build -trimpath -o /out/demoworld ./cmd/demoworld && go build -trimpath -o /out/attacklab ./cmd/attacklab  && go build -trimpath -o /out/mockmodel ./cmd/mockmodel
+RUN cd /src/demo && go build -trimpath -o /out/demoworld ./cmd/demoworld \
+ && go build -trimpath -o /out/attacklab ./cmd/attacklab \
+ && go build -trimpath -o /out/mockmodel ./cmd/mockmodel
+
+FROM node:24.19.0-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS console
+WORKDIR /src/console
+COPY console/package.json console/package-lock.json console/.npmrc ./
+RUN npm ci --no-audit --no-fund
+COPY console/ ./
+RUN npm run build
 
 FROM localhost/gjallarhorn-bifrost:latest
 COPY --from=build /out/ /app/
+COPY --from=console /src/console/dist/ /app/console/
 COPY --chown=bifrost:bifrost deploy/demo/config.json /app/data/config.json
 COPY deploy/demo/run.sh /app/run.sh
 EXPOSE 8080 8787 9100
