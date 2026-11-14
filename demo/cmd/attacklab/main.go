@@ -1,6 +1,8 @@
 // Command attacklab runs Gjallarhorn's attack lab against a running demo stack and writes a
 // report. With -mode both it first runs every scenario with Gjallarhorn in monitor-only mode
-// (the "without" baseline), then enforcing.
+// (the "without" baseline), then enforcing. Then, unless -drill=false, it runs the co-pilot
+// fire drill: remove a rule, let an attack through, and check that the AI co-pilot closes the
+// gap with a rule proven safe by replay. -mode drill runs only the drill.
 package main
 
 import (
@@ -26,13 +28,15 @@ type report struct {
 	Summaries []lab.Summary           `json:"summaries"`
 	Results   map[string][]lab.Result `json:"results"`
 	Stories   map[string]string       `json:"stories"`
+	Drill     *lab.DrillReport        `json:"copilot_drill,omitempty"`
 }
 
 func main() {
 	gw := flag.String("gateway", envOr("GATEWAY_URL", "http://127.0.0.1:8080"), "Bifrost base URL")
 	ctrl := flag.String("control", envOr("CONTROL_URL", "http://127.0.0.1:8787"), "Gjallarhorn control API URL")
 	ledger := flag.String("ledger", envOr("LEDGER_URL", "http://127.0.0.1:9100/ledger"), "tools ledger URL")
-	mode := flag.String("mode", "both", "enforce, monitor or both")
+	mode := flag.String("mode", "both", "enforce, monitor, both or drill")
+	drill := flag.Bool("drill", true, "run the co-pilot fire drill after the scenarios")
 	only := flag.String("only", "", "comma-separated scenario IDs to run (default all)")
 	out := flag.String("out", "", "write a JSON report to this file")
 	flag.Parse()
@@ -77,6 +81,8 @@ func main() {
 		modes = []bool{false}
 	case "both":
 		modes = []bool{false, true}
+	case "drill":
+		*drill = true
 	default:
 		log.Fatalf("unknown mode %q", *mode)
 	}
@@ -122,6 +128,18 @@ func main() {
 	}
 	_ = env.SetEnforcing(ctx, true)
 	_ = env.UnlockAll(ctx)
+
+	if *drill {
+		fmt.Printf("\n=== AI co-pilot fire drill ===\n")
+		d := lab.RunDrill(ctx, env, lab.DefaultDrill, func(f string, a ...any) { fmt.Printf(f+"\n", a...) })
+		rep.Drill = &d
+		mark := "PASS"
+		if !d.Passed {
+			mark, failed = "FAIL", true
+		}
+		fmt.Printf("drill: %s %s\n", mark, d.Verdict)
+		_ = env.UnlockAll(ctx)
+	}
 
 	if *out != "" {
 		if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {

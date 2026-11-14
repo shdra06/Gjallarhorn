@@ -76,6 +76,10 @@
       {
         "id": "vk-partner", "name": "partner agent (third party)", "value": "sk-bf-partner-demo", "is_active": true,
         "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }]
+      },
+      {
+        "id": "vk-copilot", "name": "Gjallarhorn AI co-pilot", "value": "sk-bf-copilot-demo", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["copilot-stub"], "key_ids": ["*"] }]
       }
     ]
   },
@@ -113,7 +117,8 @@
           { "id": "agent:support", "kind": "agent", "virtual_keys": ["sk-bf-support-demo"], "agent_names": ["support"] },
           { "id": "agent:billing", "kind": "agent", "virtual_keys": ["sk-bf-billing-demo"], "agent_names": ["billing"] },
           { "id": "agent:research", "kind": "agent", "virtual_keys": ["sk-bf-research-demo"], "agent_names": ["research"] },
-          { "id": "agent:partner", "kind": "agent", "labels": { "trust": "external" }, "virtual_keys": ["sk-bf-partner-demo"], "agent_names": ["partner"] }
+          { "id": "agent:partner", "kind": "agent", "labels": { "trust": "external" }, "virtual_keys": ["sk-bf-partner-demo"], "agent_names": ["partner"] },
+          { "id": "service:copilot", "kind": "service", "labels": { "role": "copilot" }, "virtual_keys": ["sk-bf-copilot-demo"] }
         ],
         "tickets": { "active_key": "demo-1", "keys": { "demo-1": "env:GJ_TICKET_KEY" }, "ttl": "10m" },
         "recorder": { "path": "/app/data/gjallarhorn-flight.jsonl" },
@@ -124,6 +129,12 @@
           "allowed_origins": ["http://localhost:5173"]
         },
         "accept_labels": true,
+        "copilot": {
+          "endpoint": "http://127.0.0.1:8080",
+          "model": "mock/copilot-stub",
+          "virtual_key": "sk-bf-copilot-demo",
+          "timeout_seconds": 60
+        },
         "policy": {
           "version": 1,
           "guards": { "max_depth": 3 },

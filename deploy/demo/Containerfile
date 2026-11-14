@@ -1,5 +1,5 @@
-# The full demo: Bifrost + Gjallarhorn, the demo company's agents and tools, a mock model and
-# the attack lab, in one container.
+# The full demo: Bifrost + Gjallarhorn, the demo company's agents and tools, a mock model (with
+# a scripted stand-in for the co-pilot's LLM) and the attack lab, in one container.
 #
 #   podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
 #   podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
@@ -10,9 +10,7 @@ ENV CGO_ENABLED=0
 COPY demo/go.mod demo/go.sum /src/demo/
 RUN cd /src/demo && go mod download
 COPY demo/ /src/demo/
-RUN cd /src/demo && go build -trimpath -o /out/demoworld ./cmd/demoworld && go build -trimpath -o /out/attacklab ./cmd/attacklab
-COPY deploy/spike/mock/ /src/mock/
-RUN cd /src/mock && go build -trimpath -o /out/mock .
+RUN cd /src/demo && go build -trimpath -o /out/demoworld ./cmd/demoworld && go build -trimpath -o /out/attacklab ./cmd/attacklab  && go build -trimpath -o /out/mockmodel ./cmd/mockmodel
 
 FROM localhost/gjallarhorn-bifrost:latest
 COPY --from=build /out/ /app/

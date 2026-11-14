@@ -1,11 +1,11 @@
 #!/bin/sh
-# Starts the mock model, the demo company's tools and agents, then Bifrost with Gjallarhorn.
+# Starts the mock model (and the co-pilot's scripted stand-in model), the demo company's tools and agents, then Bifrost with Gjallarhorn.
 # Bifrost reads the agent cards and connects to the tools at startup, so they start first.
 set -e
 : "${GJ_TICKET_KEY:?set GJ_TICKET_KEY (at least 32 characters)}"
 : "${GJ_ADMIN_TOKEN:?set GJ_ADMIN_TOKEN (at least 24 characters)}"
 
-/app/mock -addr 127.0.0.1:9000 &
+/app/mockmodel -addr 127.0.0.1:9000 &
 /app/demoworld -gateway http://127.0.0.1:8080 -host 127.0.0.1 -tools 0.0.0.0:9100 &
 
 for port in 9000 9100 9201 9202 9203 9204; do
