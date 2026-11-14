@@ -56,7 +56,7 @@ The post hooks call `engine.RecordOutcome` with the status, latency and tokens.
 |---|---|---|---|
 | Direct call | anyone's key | none | the key's owner |
 | Agent uses its own key inside a chain | the agent's key | the agent's ticket | the ticket holder; key and holder must match |
-| Agent uses a forwarded human key ("Forward Bifrost authentication") | the human's key | the agent's ticket | the ticket holder; the key must be the chain's origin |
+| Agent uses a forwarded key ("Forward Bifrost authentication") | the key of whoever called it (the human origin or an earlier agent) | the agent's ticket | the ticket holder; the key must belong to someone in the chain |
 | Ticket lifted by another agent | someone else's key | stolen ticket | denied: `ticket_mismatch` |
 | Forged or edited ticket | any | bad signature | denied: `ticket_bad_signature` |
 

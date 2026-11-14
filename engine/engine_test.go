@@ -113,6 +113,15 @@ func TestBorrowedRefundIsBlocked(t *testing.T) {
 	if fwd.Facts.Actor.ID != "agent:billing" || fwd.Facts.Credential.ID != "human:priya" {
 		t.Fatalf("with a forwarded key the actor is still the agent: %+v", fwd.Facts)
 	}
+	// Forwarding also happens between agents: support calls research with its own key, and
+	// research reuses that forwarded key. The key belongs to the chain, so it is accepted, and
+	// research is still the actor.
+	t4 := mustAllow(t, "support asks research", e.Delegate(Request{Target: "research", VirtualKey: "vk-support", Ticket: t1.Ticket}))
+	viaAgent := mustAllow(t, "research uses support's forwarded key",
+		e.Check(Request{Plane: policy.PlaneLLM, Target: "m", VirtualKey: "vk-support", Ticket: t4.Ticket}))
+	if viaAgent.Facts.Actor.ID != "agent:research" || viaAgent.Facts.Credential.ID != "agent:support" {
+		t.Fatalf("actor must be the ticket holder: %+v", viaAgent.Facts)
+	}
 }
 
 func TestStolenOrForgedTickets(t *testing.T) {

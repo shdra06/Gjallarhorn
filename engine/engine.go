@@ -199,21 +199,21 @@ func (e *Engine) resolve(req Request) resolved {
 		return resolved{facts: f}
 	}
 	f.TicketID = claims.ID
-	// Bind the ticket to the credential presented with it. An agent calling with its own key
-	// must be the ticket holder; an agent calling with a forwarded key must be carrying the
-	// key of the chain's origin. Anything else means the ticket was lifted from elsewhere.
-	switch cred.Kind {
-	case identity.KindAgent:
-		if cred.ID != claims.Holder() {
-			f.TicketProblem = "ticket_mismatch"
-			return resolved{facts: f}
+	// Bind the ticket to the credential presented with it. The key must belong to someone in
+	// the chain: the ticket holder using its own key, or a key Bifrost forwarded to it from an
+	// earlier link ("Forward Bifrost authentication" passes the immediate caller's key, which
+	// may be the human origin or another agent). A key from outside the chain means the ticket
+	// was lifted and is being replayed by someone else.
+	inChain := false
+	if cred.Kind != identity.KindUnknown {
+		for _, id := range claims.Chain() {
+			if id == cred.ID {
+				inChain = true
+				break
+			}
 		}
-	case identity.KindHuman, identity.KindService:
-		if cred.ID != claims.Root {
-			f.TicketProblem = "ticket_mismatch"
-			return resolved{facts: f}
-		}
-	default:
+	}
+	if !inChain {
 		f.TicketProblem = "ticket_mismatch"
 		return resolved{facts: f}
 	}
