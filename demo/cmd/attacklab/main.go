@@ -37,6 +37,7 @@ func main() {
 	ledger := flag.String("ledger", envOr("LEDGER_URL", "http://127.0.0.1:9100/ledger"), "tools ledger URL")
 	mode := flag.String("mode", "both", "enforce, monitor, both or drill")
 	drill := flag.Bool("drill", true, "run the co-pilot fire drill after the scenarios")
+	serve := flag.String("serve", "", "instead of running the lab, serve the demo traffic driver on this address (used by the console)")
 	only := flag.String("only", "", "comma-separated scenario IDs to run (default all)")
 	out := flag.String("out", "", "write a JSON report to this file")
 	flag.Parse()
@@ -56,6 +57,13 @@ func main() {
 			"research": envOr("RESEARCH_VK", "sk-bf-research-demo"),
 			"partner":  envOr("PARTNER_VK", "sk-bf-partner-demo"),
 		},
+	}
+
+	if *serve != "" {
+		d := lab.NewDriver(env, lab.Scenarios())
+		srv := &http.Server{Addr: *serve, Handler: d.Handler(), ReadHeaderTimeout: 10 * time.Second}
+		log.Printf("demo traffic driver on %s", *serve)
+		log.Fatal(srv.ListenAndServe())
 	}
 
 	scenarios := lab.Scenarios()

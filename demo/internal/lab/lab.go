@@ -31,6 +31,9 @@ type Env struct {
 	Ledger  string // tools ledger URL
 	Keys    map[string]string
 	HTTP    *http.Client
+	// KeepLockdowns stops RunOne from lifting lockdowns before each scenario (the demo driver
+	// sets it, so lockdowns made from the console stay in place).
+	KeepLockdowns bool
 }
 
 // As returns the identity for a named caller ("chat", "priya", "support", ...), labelled.
@@ -208,7 +211,9 @@ type Result struct {
 
 // RunOne runs a scenario and judges it.
 func RunOne(ctx context.Context, env *Env, s Scenario, enforcing bool) Result {
-	_ = env.UnlockAll(ctx)
+	if !env.KeepLockdowns {
+		_ = env.UnlockAll(ctx)
+	}
 	before := env.effects(ctx)
 	seq := env.lastSeq(ctx)
 	start := time.Now()
