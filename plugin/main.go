@@ -201,6 +201,14 @@ func HTTPTransportPreHook(ctx *schemas.BifrostContext, req *schemas.HTTPRequest)
 	if req.Headers == nil {
 		req.Headers = map[string]string{}
 	}
+	// Replace the caller's ticket with the new one. Header names arrive in whatever case the
+	// client used ("X-Gjallarhorn-Chain"), so remove every spelling first; otherwise the agent
+	// could receive both and pick up the caller's old ticket.
+	for k := range req.Headers {
+		if strings.EqualFold(k, e.TicketHeader()) {
+			delete(req.Headers, k)
+		}
+	}
 	if res.Ticket != "" {
 		req.Headers[e.TicketHeader()] = res.Ticket
 	}
