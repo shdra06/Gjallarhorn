@@ -159,6 +159,18 @@ Details in [copilot.md](copilot.md). In short:
 - `POST /v1/copilot/apply` proves the rule again against everything recorded so far. It needs the
   policy ETag, and installs the rule with a compare-and-swap.
 
+## Console
+
+Details in [console.md](console.md). The control API serves the built console (`console_dir`) on
+its own origin, with a strict Content-Security-Policy:
+- The console loads recent history from `/v1/events`, then follows `/v1/stream`.
+- It uses `fetch` rather than `EventSource`, so the admin token stays in a header and never
+  appears in a URL. It resumes after the last sequence number when it reconnects.
+- The 3D airspace is plain Three.js driven by a small store. Node labels and interception
+  markers are real DOM buttons, so the scene can be used with a keyboard.
+- In demo environments, `/demo/` on the control API forwards (admin token required, then
+  stripped) to the attack lab's traffic driver.
+
 ## Measured performance
 
 See [benchmarks.md](benchmarks.md):

@@ -17,13 +17,26 @@ what happened and suggested 9 rules. Replaying real traffic proved 3 of them saf
 on its own**: 5 would have blocked normal work, 1 was malformed. The proven rule stopped the attack,
 and normal work kept running ([how](docs/copilot.md)).
 
+## Try it
+
+```bash
+podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
+podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
+bash deploy/demo/run-console.sh
+```
+
+Open <http://localhost:18788/> and sign in with the token the script prints. Turn on normal work,
+then launch an attack and watch Gjallarhorn cut it off mid-air. Click the red ✕ to see the whole
+chain, ask the AI co-pilot what happened, or lock the agent. See [docs/console.md](docs/console.md).
+
 | Done | Next |
 |---|---|
-| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | 3D airspace console |
+| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | Usability test of the console with 3–5 people who have never seen it ([script](docs/usability-test.md)) |
 | Operator control API with a live event stream and an enforce/monitor switch | Published measurements, threat model, upstream PR |
 | Bifrost plugin, running in real Bifrost v2.5.1 | Submission package |
 | Demo world (4 A2A agents, 5 MCP tools) and an attack lab ([how it works](docs/attack-lab.md)) | |
 | AI co-pilot: incident explainer and a rule suggester proven by replay ([how it works](docs/copilot.md)) | |
+| Operator console: live 3D airspace, table, incidents, lockdowns, policy editor with live replay, replay timeline ([how it works](docs/console.md)) | |
 
 ## The problem
 
@@ -56,10 +69,11 @@ them is tricked, today's gateways can't answer basic questions:
 |---|---|
 | `engine/` | The core, in plain Go with no Bifrost dependency: identity, tickets, policy, lockdown, recorder, replay, incidents, AI co-pilot, control API |
 | `plugin/` | The Bifrost plugin: a thin adapter from Bifrost's hooks to the engine |
+| `console/` | The operator console (React, Three.js, TypeScript), served by the control API |
 | `demo/` | The demo company (A2A agents, MCP tools, effects ledger, mock model), the attack lab and the co-pilot fire drill |
 | `deploy/` | Container builds: Bifrost with the plugin, the full demo, a dev image with integration tests, the Phase 1 spike |
 | `results/` | Raw attack-lab reports behind every number we publish |
-| `docs/` | Plan, architecture, co-pilot, attack lab, results, benchmarks, spike results |
+| `docs/` | Plan, architecture, console, co-pilot, attack lab, results, benchmarks, usability test, spike results |
 
 ## Developing
 
@@ -87,6 +101,15 @@ container, then run the integration tests against the real gateway (use `docker`
 podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
 podman build -t gjallarhorn-dev -f deploy/dev/Containerfile .
 bash deploy/dev/test.sh
+```
+
+The console needs Node 22.12 or later:
+
+```bash
+cd console
+npm ci
+npm test
+npm run dev        # proxies the API of a running demo (bash deploy/demo/run-console.sh)
 ```
 
 A clean build takes about 10–15 minutes, because Bifrost and the plugin are compiled together so
