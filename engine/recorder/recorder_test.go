@@ -28,7 +28,7 @@ func sampleEvent(i int) Event {
 
 func TestMemoryRecorderChainAndRing(t *testing.T) {
 	r := NewMemory(WithRingSize(3), WithClock(func() time.Time { return t0 }))
-	var last Event
+	defer r.Close()
 	for i := 0; i < 5; i++ {
 		e, err := r.Append(sampleEvent(i))
 		if err != nil {
@@ -37,17 +37,18 @@ func TestMemoryRecorderChainAndRing(t *testing.T) {
 		if e.Seq != uint64(i+1) {
 			t.Fatalf("seq %d, want %d", e.Seq, i+1)
 		}
-		if i == 0 && e.Prev != GenesisHash {
-			t.Fatal("first event must link to the genesis hash")
-		}
-		if i > 0 && e.Prev != last.Hash {
-			t.Fatal("events must link to the previous hash")
-		}
-		last = e
 	}
 	recent := r.Recent(0)
 	if len(recent) != 3 || recent[0].Seq != 3 || recent[2].Seq != 5 {
 		t.Fatalf("ring should keep the last 3 events in order, got %v", seqs(recent))
+	}
+	for i := 1; i < len(recent); i++ {
+		if recent[i].Prev != recent[i-1].Hash {
+			t.Fatalf("event %d does not link to the previous hash", recent[i].Seq)
+		}
+		if h, _ := computeHash(recent[i]); h != recent[i].Hash {
+			t.Fatalf("event %d hash does not match its content", recent[i].Seq)
+		}
 	}
 	if got := r.Since(4, 0); len(got) != 1 || got[0].Seq != 5 {
 		t.Fatalf("since 4: %v", seqs(got))
@@ -56,8 +57,76 @@ func TestMemoryRecorderChainAndRing(t *testing.T) {
 		t.Fatalf("recent 2: %v", seqs(got))
 	}
 	st := r.Stats()
-	if st.Events != 5 || st.LastSeq != 5 || st.LastHash != last.Hash {
+	if st.Events != 5 || st.LastSeq != 5 || st.LastHash != recent[2].Hash {
 		t.Fatalf("stats %+v", st)
+	}
+}
+
+func TestFirstEventLinksToGenesis(t *testing.T) {
+	r := NewMemory()
+	defer r.Close()
+	_, _ = r.Append(sampleEvent(0))
+	if got := r.Recent(1); len(got) != 1 || got[0].Prev != GenesisHash {
+		t.Fatalf("first event must link to the genesis hash: %+v", got)
+	}
+}
+
+func TestAppendCopiesCallerData(t *testing.T) {
+	r := NewMemory()
+	defer r.Close()
+	e := sampleEvent(0)
+	_, _ = r.Append(e)
+	e.Decision.Reason = "changed after append"
+	e.Note["label"] = "changed"
+	got := r.Recent(1)[0]
+	if got.Decision.Reason == "changed after append" || got.Note["label"] == "changed" {
+		t.Fatal("the recorder must keep what was appended, not what the caller changed later")
+	}
+}
+
+func TestBackpressureDoesNotDeadlock(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "flight.jsonl")
+	r, err := Open(path, WithQueueSize(1), WithRingSize(16))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ch, cancel := r.Subscribe(1)
+	defer cancel()
+	go func() {
+		for range ch {
+		}
+	}()
+	done := make(chan struct{})
+	go func() {
+		var wg sync.WaitGroup
+		for g := 0; g < 8; g++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for i := 0; i < 300; i++ {
+					_, _ = r.Append(sampleEvent(i))
+					if i%50 == 0 {
+						_ = r.Stats()
+						_ = r.Recent(5)
+					}
+				}
+			}()
+		}
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(20 * time.Second):
+		t.Fatal("appends with a full queue deadlocked")
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	f, _ := os.Open(path)
+	defer f.Close()
+	if n, err := Verify(f); err != nil || n != 2400 {
+		t.Fatalf("log after backpressure: n=%d err=%v", n, err)
 	}
 }
 
@@ -169,9 +238,11 @@ func TestTamperDetection(t *testing.T) {
 
 func TestSubscribe(t *testing.T) {
 	r := NewMemory()
+	defer r.Close()
 	ch, cancel := r.Subscribe(1)
 	_, _ = r.Append(sampleEvent(0))
 	_, _ = r.Append(sampleEvent(1)) // subscriber buffer is full: dropped, not blocking
+	_ = r.Stats()                   // wait until both are sealed
 	if e := <-ch; e.Seq != 1 {
 		t.Fatalf("got seq %d", e.Seq)
 	}
@@ -225,6 +296,7 @@ func TestConcurrentAppendsKeepOrder(t *testing.T) {
 
 func BenchmarkAppendMemory(b *testing.B) {
 	r := NewMemory()
+	defer r.Close()
 	e := sampleEvent(1)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -239,5 +311,24 @@ func BenchmarkAppendFile(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_, _ = r.Append(e)
+	}
+}
+
+// BenchmarkAppendLatency measures the time a caller spends in Append when the sealer has room,
+// which is what a request sees under normal load. Sealing happens off the timer.
+func BenchmarkAppendLatency(b *testing.B) {
+	r, _ := Open(filepath.Join(b.TempDir(), "flight.jsonl"))
+	defer r.Close()
+	e := sampleEvent(1)
+	const burst = 512
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = r.Append(e)
+		if i%burst == burst-1 {
+			b.StopTimer()
+			_ = r.Stats() // let the sealer catch up
+			b.StartTimer()
+		}
 	}
 }

@@ -5,10 +5,13 @@
 // that link. Changing, deleting or reordering any line breaks the chain, and Verify reports
 // exactly where. Events are written as JSON Lines so they are easy to read, ship and replay.
 //
-// The request path never waits on disk under normal load: Append hashes the event (a few
-// microseconds), keeps it in an in-memory ring for the live console, and hands the line to a
-// background writer. If the writer falls far behind, Append blocks rather than drop an event,
-// because a silently missing event would defeat the point of a flight recorder.
+// The request path does as little as possible: Append gives the event a sequence number and
+// queues it. A single background "sealer" goroutine then links and hashes events strictly in
+// sequence order, writes them to disk, keeps recent ones in memory and feeds live subscribers.
+// If the sealer falls far behind, Append blocks rather than drop an event, because a silently
+// missing event would defeat the point of a flight recorder. Readers (Since, Recent, Stats)
+// wait until every event appended before the call has been sealed, so they always see a
+// complete, ordered history.
 package recorder
 
 import (
@@ -22,6 +25,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
@@ -63,7 +67,8 @@ type Event struct {
 	// default so prompts and tool results are not stored.
 	Capture json.RawMessage `json:"capture,omitempty"`
 	Prev    string          `json:"prev"`
-	Hash    string          `json:"hash"`
+	// Hash must stay the last field: seal relies on it to build the line from one encoding.
+	Hash string `json:"hash"`
 }
 
 // computeHash hashes the event with its Hash field cleared.
@@ -75,6 +80,29 @@ func computeHash(e Event) (string, error) {
 	}
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:]), nil
+}
+
+// seal sets e.Hash and returns the event's JSON line. It encodes the event once: the hash is
+// taken over the encoding with an empty hash, and the line is that encoding with the hash
+// spliced into the final field.
+func seal(e *Event) ([]byte, error) {
+	e.Hash = ""
+	b, err := json.Marshal(e)
+	if err != nil {
+		return nil, err
+	}
+	sum := sha256.Sum256(b)
+	e.Hash = hex.EncodeToString(sum[:])
+	const tail = `""}`
+	if !bytes.HasSuffix(b, []byte(tail)) {
+		return nil, errors.New("recorder: unexpected event encoding")
+	}
+	line := make([]byte, 0, len(b)+len(e.Hash)+1)
+	line = append(line, b[:len(b)-len(tail)]...)
+	line = append(line, '"')
+	line = append(line, e.Hash...)
+	line = append(line, '"', '}', '\n')
+	return line, nil
 }
 
 // Stats describes the recorder's state.
@@ -90,11 +118,20 @@ type Stats struct {
 	LastWriteError      string `json:"last_write_error,omitempty"`
 }
 
-// Recorder appends events. Create one with Open or NewMemory.
+// Recorder appends events. Create one with Open or NewMemory, and Close it when done.
 type Recorder struct {
+	// appendMu orders Append calls: it guards handing out sequence numbers and queueing, so
+	// queue order equals sequence order. The sealer never takes it, so an Append blocked on a
+	// full queue can't stall the sealer.
+	appendMu  sync.Mutex
+	assigned  atomic.Uint64 // last sequence number handed out by Append
+	appending bool          // false once Close has started (guarded by appendMu)
+
+	// mu guards the sealed state below; the sealer takes it once per event.
 	mu       sync.Mutex
-	seq      uint64
-	prev     string
+	sealed   *sync.Cond // signalled each time the sealer finishes an event
+	seq      uint64     // last sequence number sealed
+	prev     string     // hash of the last sealed event
 	count    uint64
 	ring     []Event
 	ringNext int
@@ -103,16 +140,12 @@ type Recorder struct {
 	nextSub  int
 	drops    uint64
 	closed   bool
-
-	// errMu guards write-error counters. It is separate from mu because the writer goroutine
-	// must never need mu: Append may be blocked holding mu while waiting for the writer.
-	errMu    sync.Mutex
 	writeErr uint64
 	lastErr  string
 
-	file  *os.File
-	lines chan []byte
+	queue chan Event
 	done  chan struct{}
+	file  *os.File
 	now   func() time.Time
 }
 
@@ -131,8 +164,19 @@ func WithRingSize(n int) Option {
 // WithClock replaces the time source.
 func WithClock(now func() time.Time) Option { return func(r *Recorder) { r.now = now } }
 
+// WithQueueSize sets how many appended events may wait for the sealer (default 16384).
+func WithQueueSize(n int) Option {
+	return func(r *Recorder) {
+		if n > 0 {
+			r.queue = make(chan Event, n)
+		}
+	}
+}
+
 func newRecorder(opts []Option) *Recorder {
-	r := &Recorder{prev: GenesisHash, subs: map[int]chan Event{}, now: time.Now}
+	r := &Recorder{prev: GenesisHash, subs: map[int]chan Event{}, now: time.Now,
+		queue: make(chan Event, 16384), done: make(chan struct{}), appending: true}
+	r.sealed = sync.NewCond(&r.mu)
 	for _, o := range opts {
 		o(r)
 	}
@@ -143,7 +187,11 @@ func newRecorder(opts []Option) *Recorder {
 }
 
 // NewMemory returns a recorder that keeps events in memory only (tests, demos, replay).
-func NewMemory(opts ...Option) *Recorder { return newRecorder(opts) }
+func NewMemory(opts ...Option) *Recorder {
+	r := newRecorder(opts)
+	go r.sealLoop()
+	return r
+}
 
 // Open returns a recorder that appends to path, continuing the hash chain of any existing
 // content. The existing content is verified first; a broken chain is an error, so tampering
@@ -158,6 +206,7 @@ func Open(path string, opts ...Option) (*Recorder, error) {
 		}
 		if len(events) > 0 {
 			last := events[len(events)-1]
+			r.assigned.Store(last.Seq)
 			r.seq, r.prev, r.count = last.Seq, last.Hash, uint64(len(events))
 			for _, e := range events {
 				r.pushRing(e)
@@ -171,9 +220,7 @@ func Open(path string, opts ...Option) (*Recorder, error) {
 		return nil, fmt.Errorf("recorder: %w", err)
 	}
 	r.file = f
-	r.lines = make(chan []byte, 8192)
-	r.done = make(chan struct{})
-	go r.writeLoop()
+	go r.sealLoop()
 	return r, nil
 }
 
@@ -190,56 +237,126 @@ func verifyAndCollect(rd io.Reader, ring []Event) ([]Event, error) {
 	return tail, err
 }
 
-// Append adds an event, filling in Seq, Time (if zero), Prev and Hash. It returns the stored
-// event. Append is safe for concurrent use.
+// Append queues an event and returns it with Seq (and Time, if it was zero) filled in. Prev
+// and Hash are filled in by the sealer; read them back with Since or Recent. Append is safe
+// for concurrent use, and events are sealed in the order their sequence numbers were given.
 func (r *Recorder) Append(e Event) (Event, error) {
-	r.mu.Lock()
-	if r.closed {
-		r.mu.Unlock()
-		return Event{}, errors.New("recorder is closed")
-	}
 	if e.Time.IsZero() {
 		e.Time = r.now()
 	}
 	e.Time = e.Time.UTC()
+	// Copy what the caller may still hold a reference to, so the sealer hashes exactly what
+	// was appended.
 	if e.Facts != nil {
 		f := *e.Facts
 		f.Time = f.Time.UTC()
 		e.Facts = &f
 	}
-	e.Seq = r.seq + 1
-	e.Prev = r.prev
-	h, err := computeHash(e)
-	if err != nil {
-		r.mu.Unlock()
-		return Event{}, fmt.Errorf("recorder: %w", err)
+	if e.Decision != nil {
+		d := *e.Decision
+		e.Decision = &d
 	}
-	e.Hash = h
-	var line []byte
-	if r.lines != nil {
-		line, err = json.Marshal(e)
-		if err != nil {
-			r.mu.Unlock()
-			return Event{}, fmt.Errorf("recorder: %w", err)
+	if e.Outcome != nil {
+		o := *e.Outcome
+		e.Outcome = &o
+	}
+	if e.Note != nil {
+		n := make(map[string]string, len(e.Note))
+		for k, v := range e.Note {
+			n[k] = v
 		}
-		line = append(line, '\n')
+		e.Note = n
 	}
-	r.seq, r.prev = e.Seq, e.Hash
-	r.count++
-	r.pushRing(e)
-	for _, ch := range r.subs {
-		select {
-		case ch <- e:
-		default:
-			r.drops++
-		}
+	e.Prev, e.Hash = "", ""
+
+	r.appendMu.Lock()
+	if !r.appending {
+		r.appendMu.Unlock()
+		return Event{}, errors.New("recorder is closed")
 	}
-	// Sending under the lock keeps file order identical to sequence order.
-	if line != nil {
-		r.lines <- line
-	}
-	r.mu.Unlock()
+	e.Seq = r.assigned.Add(1)
+	// Queue while holding appendMu so queue order equals sequence order.
+	r.queue <- e
+	r.appendMu.Unlock()
 	return e, nil
+}
+
+// sealLoop links, hashes, writes and publishes events in order.
+func (r *Recorder) sealLoop() {
+	defer close(r.done)
+	var w *bufio.Writer
+	if r.file != nil {
+		w = bufio.NewWriterSize(r.file, 64*1024)
+	}
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+	flush := func() {
+		if w != nil {
+			if err := w.Flush(); err != nil {
+				r.noteWriteError(err)
+			}
+		}
+	}
+	prev := r.prev
+	for {
+		select {
+		case e, ok := <-r.queue:
+			if !ok {
+				flush()
+				if r.file != nil {
+					if err := r.file.Sync(); err != nil {
+						r.noteWriteError(err)
+					}
+				}
+				return
+			}
+			e.Prev = prev
+			line, err := seal(&e)
+			if err != nil {
+				r.noteWriteError(err)
+				continue
+			}
+			prev = e.Hash
+			if w != nil {
+				if _, err := w.Write(line); err != nil {
+					r.noteWriteError(err)
+				}
+				if len(r.queue) == 0 {
+					flush()
+				}
+			}
+			r.mu.Lock()
+			r.seq, r.prev = e.Seq, e.Hash
+			r.count++
+			r.pushRing(e)
+			for _, ch := range r.subs {
+				select {
+				case ch <- e:
+				default:
+					r.drops++
+				}
+			}
+			r.sealed.Broadcast()
+			r.mu.Unlock()
+		case <-ticker.C:
+			flush()
+		}
+	}
+}
+
+func (r *Recorder) noteWriteError(err error) {
+	r.mu.Lock()
+	r.writeErr++
+	r.lastErr = err.Error()
+	r.mu.Unlock()
+}
+
+// waitSealedLocked blocks until every event assigned so far has been sealed. r.mu is held.
+func (r *Recorder) waitSealedLocked() {
+	target := r.assigned.Load()
+	for r.seq < target && !r.closed {
+		r.sealed.Wait()
+	}
 }
 
 func (r *Recorder) pushRing(e Event) {
@@ -250,16 +367,17 @@ func (r *Recorder) pushRing(e Event) {
 	}
 }
 
-// Recent returns up to n of the most recent events, oldest first.
+// Recent returns up to n of the most recent events, oldest first (n <= 0 means all in memory).
 func (r *Recorder) Recent(n int) []Event {
 	return r.Since(0, n)
 }
 
-// Since returns events with Seq > after that are still in memory, oldest first, at most limit
-// (limit <= 0 means no limit).
+// Since returns sealed events with Seq > after that are still in memory, oldest first, at most
+// limit (limit <= 0 means no limit). It first waits for every event appended before the call.
 func (r *Recorder) Since(after uint64, limit int) []Event {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.waitSealedLocked()
 	size := r.ringNext
 	start := 0
 	if r.ringFull {
@@ -279,8 +397,9 @@ func (r *Recorder) Since(after uint64, limit int) []Event {
 	return out
 }
 
-// Subscribe returns a channel of new events and a function that ends the subscription.
-// Slow subscribers miss live messages (counted in Stats) and can catch up with Since.
+// Subscribe returns a channel of newly sealed events and a function that ends the
+// subscription. Slow subscribers miss live messages (counted in Stats) and can catch up with
+// Since.
 func (r *Recorder) Subscribe(buffer int) (<-chan Event, func()) {
 	if buffer <= 0 {
 		buffer = 256
@@ -289,90 +408,61 @@ func (r *Recorder) Subscribe(buffer int) (<-chan Event, func()) {
 	r.mu.Lock()
 	id := r.nextSub
 	r.nextSub++
+	if r.closed {
+		r.mu.Unlock()
+		close(ch)
+		return ch, func() {}
+	}
 	r.subs[id] = ch
 	r.mu.Unlock()
 	var once sync.Once
 	return ch, func() {
 		once.Do(func() {
 			r.mu.Lock()
-			delete(r.subs, id)
+			if c, ok := r.subs[id]; ok {
+				delete(r.subs, id)
+				close(c)
+			}
 			r.mu.Unlock()
-			close(ch)
 		})
 	}
 }
 
-// Stats returns counters.
+// Stats returns counters, after waiting for pending events to be sealed.
 func (r *Recorder) Stats() Stats {
 	r.mu.Lock()
-	s := Stats{Events: r.count, LastSeq: r.seq, LastHash: r.prev, Subscribers: len(r.subs),
-		SlowSubscriberDrops: r.drops}
-	r.mu.Unlock()
-	r.errMu.Lock()
-	s.WriteErrors, s.LastWriteError = r.writeErr, r.lastErr
-	r.errMu.Unlock()
-	return s
+	defer r.mu.Unlock()
+	r.waitSealedLocked()
+	return Stats{Events: r.count, LastSeq: r.seq, LastHash: r.prev, Subscribers: len(r.subs),
+		SlowSubscriberDrops: r.drops, WriteErrors: r.writeErr, LastWriteError: r.lastErr}
 }
 
-func (r *Recorder) writeLoop() {
-	defer close(r.done)
-	w := bufio.NewWriterSize(r.file, 64*1024)
-	ticker := time.NewTicker(200 * time.Millisecond)
-	defer ticker.Stop()
-	flush := func() {
-		if err := w.Flush(); err != nil {
-			r.noteWriteError(err)
-		}
-	}
-	for {
-		select {
-		case line, ok := <-r.lines:
-			if !ok {
-				flush()
-				if err := r.file.Sync(); err != nil {
-					r.noteWriteError(err)
-				}
-				return
-			}
-			if _, err := w.Write(line); err != nil {
-				r.noteWriteError(err)
-			}
-			if len(r.lines) == 0 {
-				flush()
-			}
-		case <-ticker.C:
-			flush()
-		}
-	}
-}
-
-func (r *Recorder) noteWriteError(err error) {
-	r.errMu.Lock()
-	r.writeErr++
-	r.lastErr = err.Error()
-	r.errMu.Unlock()
-}
-
-// Close flushes pending events and closes the file. It is safe to call more than once.
+// Close seals and flushes pending events, ends subscriptions and closes the file. It is safe
+// to call more than once.
 func (r *Recorder) Close() error {
-	r.mu.Lock()
-	if r.closed {
-		r.mu.Unlock()
+	r.appendMu.Lock()
+	if !r.appending {
+		r.appendMu.Unlock()
 		return nil
 	}
+	r.appending = false
+	// No Append can queue after appending is cleared (it checks under appendMu), so closing
+	// the queue is safe; the sealer drains what is left.
+	close(r.queue)
+	r.appendMu.Unlock()
+	<-r.done
+	r.mu.Lock()
 	r.closed = true
 	for id, ch := range r.subs {
 		delete(r.subs, id)
 		close(ch)
 	}
-	lines := r.lines
+	r.sealed.Broadcast()
 	r.mu.Unlock()
-	if lines == nil {
-		return nil
+	if r.file != nil {
+		return r.file.Close()
 	}
-	close(lines)
-	<-r.done
-	return r.file.Close()
+	return nil
 }
 
 // VerifyError reports where a log's chain broke.

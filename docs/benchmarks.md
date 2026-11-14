@@ -29,3 +29,27 @@ Raw `go test -bench` results. Every number we quote anywhere must come from a ru
      checked on every use.
   2. Move event hashing to the background writer, which already processes events in order.
   3. Use a faster encoding for the hash input.
+
+## 2026-11-14: after the ticket cache and background sealing
+
+- Same machine. Note: a container build was running at the same time, so treat these as upper bounds.
+- Command:
+  `cd engine && go test -run XXX -bench 'Latency|CheckD|Append|IsLocked|Evaluate|Verify$' -benchtime 2s ./ ./recorder/ ./ticket/ ./policy/ ./lockdown/`
+
+| Benchmark | ns/op | B/op | allocs/op | What changed |
+|---|---:|---:|---:|---|
+| `BenchmarkVerify` (ticket) | **154.8** | 32 | 1 | Verified tickets are cached (expiry and key retirement still checked every time): **about 45× faster** |
+| `BenchmarkAppendLatency` | **723.8** | 850 | 5 | What a caller waits for: the event is queued, and hashing and disk writes happen on the sealer goroutine. **About 12× lower** than hashing inline |
+| `BenchmarkCheckDelegatedLatency` | **5,059** | 3,831 | 29 | One full decision for a call inside a 2-hop chain, as a request sees it: **about 2.2× lower** |
+| `BenchmarkEvaluate` | 377.8 | 16 | 1 | Unchanged |
+| `BenchmarkIsLocked` | 30.5 | 0 | 0 | Unchanged |
+| `BenchmarkAppendMemory` / `BenchmarkAppendFile` | 9,682 / 10,576 | | | Sustained throughput with the queue saturated, limited by the single sealer: about 100k events/s |
+| `BenchmarkCheckDelegatedCall` / `BenchmarkCheckDirectCall` | 7,783 / 9,161 | | | Same, saturated |
+
+A CPU profile of `BenchmarkCheckDelegatedLatency` shows:
+- JSON encoding in the sealer: about 25% (off the request path);
+- goroutine hand-off and scheduler costs: about 20%;
+- `resolve` plus `decide` on the request path: about 20%.
+
+Next targets: avoid the second SHA-256 for the key fingerprint, reuse principal copies, and use a
+faster encoder for the hash input.

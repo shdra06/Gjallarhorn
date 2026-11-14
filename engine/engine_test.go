@@ -390,3 +390,24 @@ func BenchmarkCheckDirectCall(b *testing.B) {
 		_ = e.Check(req)
 	}
 }
+
+// BenchmarkCheckDelegatedLatency measures one decision as a request sees it under normal load:
+// the flight recorder seals events in the background (off the timer here).
+func BenchmarkCheckDelegatedLatency(b *testing.B) {
+	e, _ := New(testConfig())
+	defer e.Close()
+	t1 := e.Delegate(Request{Target: "support", VirtualKey: "vk-chat"})
+	t2 := e.Delegate(Request{Target: "billing", VirtualKey: "vk-support", Ticket: t1.Ticket})
+	req := Request{Plane: policy.PlaneMCP, Target: "orders.lookup", VirtualKey: "vk-billing", Ticket: t2.Ticket}
+	const burst = 512
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = e.Check(req)
+		if i%burst == burst-1 {
+			b.StopTimer()
+			_ = e.Recorder().Stats()
+			b.StartTimer()
+		}
+	}
+}

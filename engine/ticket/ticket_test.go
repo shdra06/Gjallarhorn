@@ -139,6 +139,49 @@ func TestKeyRotation(t *testing.T) {
 	}
 }
 
+func TestVerifiedCache(t *testing.T) {
+	c := &clock{t: time.Unix(1_800_000_000, 0)}
+	is, kr := newTestIssuer(t, c)
+	tok, _, _ := is.Start("human:priya", "human", "agent:support", "")
+	first, err := is.Verify(tok)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first.Hops[0] = "agent:attacker" // callers must not be able to poison the cache
+	again, err := is.Verify(tok)
+	if err != nil || again.Hops[0] != "agent:support" {
+		t.Fatalf("cached claims were mutated: %+v %v", again, err)
+	}
+	c.t = c.t.Add(11 * time.Minute)
+	if _, err := is.Verify(tok); !errors.Is(err, ErrExpired) {
+		t.Fatalf("a cached ticket must still expire: %v", err)
+	}
+	c.t = time.Unix(1_800_000_000, 0)
+	if _, err := is.Verify(tok); err != nil {
+		t.Fatal(err)
+	}
+	if err := kr.Load("k2", map[string]string{"k2": "hex:" + strings.Repeat("ab", 32)}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := is.Verify(tok); !errors.Is(err, ErrUnknownKey) {
+		t.Fatalf("a cached ticket from a retired key must fail: %v", err)
+	}
+
+	small := NewIssuer(kr, WithClock(c.now), WithCache(2))
+	for n := 0; n < 5; n++ {
+		tk, _, _ := small.Start("human:priya", "human", "agent:x", "")
+		if _, err := small.Verify(tk); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(small.cache.data) > 2 {
+		t.Fatalf("cache exceeded its bound: %d", len(small.cache.data))
+	}
+	if NewIssuer(kr, WithCache(0)).cache != nil {
+		t.Fatal("WithCache(0) disables the cache")
+	}
+}
+
 func TestKeyringValidation(t *testing.T) {
 	bad := []struct {
 		active string

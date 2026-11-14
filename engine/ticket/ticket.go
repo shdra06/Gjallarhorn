@@ -38,6 +38,8 @@ const (
 	MinKeyLen = 32
 	// DefaultTTL is how long a minted ticket stays valid.
 	DefaultTTL = 10 * time.Minute
+	// DefaultCacheSize is how many verified tickets are remembered.
+	DefaultCacheSize = 8192
 )
 
 // Errors returned by Verify. They are stable and safe to show to operators.
@@ -166,11 +168,12 @@ func (k *Keyring) key(id string) ([]byte, bool) {
 
 // Issuer mints and verifies tickets.
 type Issuer struct {
-	keys *Keyring
-	ttl  time.Duration
-	skew time.Duration
-	now  func() time.Time
-	idFn func() string // replaced in tests for deterministic tickets
+	keys  *Keyring
+	ttl   time.Duration
+	skew  time.Duration
+	now   func() time.Time
+	idFn  func() string // replaced in tests for deterministic tickets
+	cache *verifiedCache
 }
 
 // IssuerOption configures an Issuer.
@@ -194,6 +197,7 @@ func WithSkew(d time.Duration) IssuerOption { return func(i *Issuer) { i.skew = 
 // NewIssuer creates an issuer backed by keys.
 func NewIssuer(keys *Keyring, opts ...IssuerOption) *Issuer {
 	i := &Issuer{keys: keys, ttl: DefaultTTL, skew: 30 * time.Second, now: time.Now, idFn: newID}
+	WithCache(DefaultCacheSize)(i)
 	for _, o := range opts {
 		o(i)
 	}
@@ -265,10 +269,57 @@ func (i *Issuer) sign(c *Claims) (string, error) {
 }
 
 // Verify checks a ticket's format, signature and validity window and returns its claims.
+//
+// Agents send the same ticket on every call they make for one task, so tickets that passed
+// the signature check are cached. A cache hit still re-checks the validity window and that the
+// signing key is still in the keyring, so expiry and key retirement take effect immediately.
 func (i *Issuer) Verify(tok string) (Claims, error) {
 	if len(tok) > MaxEncodedLen {
 		return Claims{}, ErrTooLarge
 	}
+	if i.cache != nil {
+		if c, ok := i.cache.get(tok); ok {
+			if _, known := i.keys.key(c.KID); !known {
+				i.cache.drop(tok)
+				return Claims{}, ErrUnknownKey
+			}
+			if err := i.checkWindow(c); err != nil {
+				return Claims{}, err
+			}
+			return c.clone(), nil
+		}
+	}
+	c, err := i.verifySlow(tok)
+	if err != nil {
+		return Claims{}, err
+	}
+	if err := i.checkWindow(c); err != nil {
+		return Claims{}, err
+	}
+	if i.cache != nil {
+		i.cache.put(tok, c.clone())
+	}
+	return c, nil
+}
+
+func (i *Issuer) checkWindow(c Claims) error {
+	now := i.now()
+	if c.IssuedAt > now.Add(i.skew).Unix() {
+		return ErrNotYet
+	}
+	if c.ExpiresAt <= now.Add(-i.skew).Unix() {
+		return ErrExpired
+	}
+	return nil
+}
+
+func (c Claims) clone() Claims {
+	c.Hops = append([]string(nil), c.Hops...)
+	return c
+}
+
+// verifySlow decodes and checks the signature and structure (not the validity window).
+func (i *Issuer) verifySlow(tok string) (Claims, error) {
 	parts := strings.Split(tok, ".")
 	if len(parts) != 3 || parts[0] != Prefix || parts[1] == "" || parts[2] == "" {
 		return Claims{}, ErrMalformed
@@ -303,14 +354,51 @@ func (i *Issuer) Verify(tok string) (Claims, error) {
 	if len(c.Hops) > MaxHops {
 		return Claims{}, ErrTooDeep
 	}
-	now := i.now()
-	if c.IssuedAt > now.Add(i.skew).Unix() {
-		return Claims{}, ErrNotYet
-	}
-	if c.ExpiresAt <= now.Add(-i.skew).Unix() {
-		return Claims{}, ErrExpired
-	}
 	return c, nil
+}
+
+// verifiedCache remembers tickets whose signature checked out. It is bounded: when full, an
+// arbitrary entry is evicted (a cache miss only costs one more signature check).
+type verifiedCache struct {
+	mu   sync.Mutex
+	max  int
+	data map[string]Claims
+}
+
+func (vc *verifiedCache) get(tok string) (Claims, bool) {
+	vc.mu.Lock()
+	c, ok := vc.data[tok]
+	vc.mu.Unlock()
+	return c, ok
+}
+
+func (vc *verifiedCache) put(tok string, c Claims) {
+	vc.mu.Lock()
+	if len(vc.data) >= vc.max {
+		for k := range vc.data {
+			delete(vc.data, k)
+			break
+		}
+	}
+	vc.data[tok] = c
+	vc.mu.Unlock()
+}
+
+func (vc *verifiedCache) drop(tok string) {
+	vc.mu.Lock()
+	delete(vc.data, tok)
+	vc.mu.Unlock()
+}
+
+// WithCache keeps up to n verified tickets in memory (0 disables the cache).
+func WithCache(n int) IssuerOption {
+	return func(i *Issuer) {
+		if n > 0 {
+			i.cache = &verifiedCache{max: n, data: make(map[string]Claims, n)}
+		} else {
+			i.cache = nil
+		}
+	}
 }
 
 // Problem converts a Verify error into a short machine-readable code.
