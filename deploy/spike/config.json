@@ -1,0 +1,45 @@
+{
+  "providers": {
+    "mock": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "chat_completion": true,
+          "chat_completion_stream": true
+        },
+        "request_path_overrides": {
+          "chat_completion": "/v1/chat/completions",
+          "chat_completion_stream": "/v1/chat/completions"
+        }
+      },
+      "network_config": {
+        "base_url": "http://127.0.0.1:9000"
+      },
+      "keys": [
+        { "name": "mock-key", "value": "mock-secret", "models": ["*"], "weight": 1.0 }
+      ]
+    }
+  },
+  "governance": {
+    "virtual_keys": [
+      {
+        "id": "vk-spike",
+        "name": "spike-test",
+        "value": "sk-bf-spike-test-key",
+        "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }]
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "gjallarhorn-spike",
+      "path": "/app/gjallarhorn-spike.so",
+      "config": {
+        "block_model": "blocked-model",
+        "header": "x-gjallarhorn-chain"
+      }
+    }
+  ]
+}

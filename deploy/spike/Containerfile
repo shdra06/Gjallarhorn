@@ -1,0 +1,45 @@
+# Phase 1 feasibility spike: a dynamically linked Bifrost plus a custom .so plugin, built in the
+# same stage so the Go toolchain and every shared dependency match exactly.
+#
+#   podman build -t gjallarhorn-spike -f deploy/spike/Containerfile deploy/spike
+#
+# The Bifrost web UI is replaced by a placeholder page to keep the spike build fast; the real
+# image builds it.
+
+ARG BIFROST_REF=transports/v2.5.1
+
+FROM golang:1.27.3-alpine3.24@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS builder
+ARG BIFROST_REF
+RUN apk add --no-cache git gcc musl-dev sqlite-dev binutils binutils-gold
+ENV CGO_ENABLED=1 GOOS=linux GOWORK=off
+
+RUN git clone --depth 1 --branch "${BIFROST_REF}" https://github.com/maximhq/bifrost.git /src/bifrost
+WORKDIR /src/bifrost/transports
+RUN go mod download
+
+# Placeholder UI (go:embed needs at least one file).
+RUN rm -rf bifrost-http/ui && mkdir -p bifrost-http/ui && \
+    echo '<!doctype html><title>Bifrost (spike build)</title><p>UI omitted in the spike build.</p>' > bifrost-http/ui/index.html
+
+# Dynamic build, mirroring `make build DYNAMIC=1` (no -extldflags -static).
+RUN go build -ldflags="-w -s -X main.Version=v2.5.1-dynamic" -trimpath -tags sqlite_static \
+      -o /out/bifrost-http ./bifrost-http
+
+# Build the plugin inside the transports module so it resolves the exact same dependency
+# versions as the binary that will load it.
+COPY plugin/ ./gjallarhorn-spike/
+RUN go build -buildmode=plugin -ldflags="-w -s" -trimpath -tags sqlite_static \
+      -o /out/gjallarhorn-spike.so ./gjallarhorn-spike
+
+COPY mock/ /src/mock/
+RUN cd /src/mock && go build -trimpath -o /out/mock .
+
+FROM alpine:3.23.7@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63
+RUN apk add --no-cache musl libgcc ca-certificates zlib curl
+WORKDIR /app
+COPY --from=builder /out/ /app/
+COPY config.json /app/data/config.json
+COPY run.sh /app/run.sh
+RUN chmod +x /app/run.sh
+EXPOSE 8080
+ENTRYPOINT ["/app/run.sh"]
