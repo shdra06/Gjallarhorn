@@ -11,8 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
 )
 
 // DefaultA2APrefix is where Bifrost serves Agent Gateway routes.

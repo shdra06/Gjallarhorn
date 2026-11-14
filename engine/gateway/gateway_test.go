@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
 )
 
 func TestA2AAgent(t *testing.T) {

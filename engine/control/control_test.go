@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
 )
 
 const token = "test-admin-token-0123456789abcdef"

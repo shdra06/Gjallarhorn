@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
 )
 
 var (

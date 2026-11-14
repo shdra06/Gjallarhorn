@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/ticket"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/ticket"
 )
 
 // Config is the engine configuration. In Bifrost it is the plugin's "config" object.

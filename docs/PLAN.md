@@ -226,7 +226,6 @@ Full details: `docs/ARCHITECTURE.md`.
 | 6–10 | Not started |
 
 ## 10. Open items
-- [ ] Set the Go module path to the real repository URL once it is shared (currently
-  `github.com/gjallarhorn-dev/gjallarhorn`).
+- [x] Set the Go module path to the real repository: `github.com/shdra06/Gjallarhorn`.
 - [ ] Confirm the deadline in an official announcement (pages still say 15 Nov 2026, 11:59 PM).
 - [ ] All team members join the Geek Room Discord (required by the rules).

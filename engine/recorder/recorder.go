@@ -28,7 +28,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
 )
 
 // Event types.

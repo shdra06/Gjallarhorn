@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/recorder"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/replay"
+	"github.com/shdra06/Gjallarhorn/engine"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/recorder"
+	"github.com/shdra06/Gjallarhorn/engine/replay"
 )
 
 // MinTokenLen is the minimum admin token length.

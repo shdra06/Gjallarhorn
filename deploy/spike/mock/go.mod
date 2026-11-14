@@ -1,3 +1,3 @@
-module github.com/gjallarhorn-dev/gjallarhorn/deploy/spike/mock
+module github.com/shdra06/Gjallarhorn/deploy/spike/mock
 
 go 1.24

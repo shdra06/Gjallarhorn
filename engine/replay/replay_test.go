@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/lockdown"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/recorder"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/lockdown"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/recorder"
 )
 
 var (

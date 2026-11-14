@@ -21,12 +21,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/lockdown"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/recorder"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/replay"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/ticket"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/lockdown"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/recorder"
+	"github.com/shdra06/Gjallarhorn/engine/replay"
+	"github.com/shdra06/Gjallarhorn/engine/ticket"
 )
 
 // DefaultTicketHeader is the HTTP header that carries chain tickets.

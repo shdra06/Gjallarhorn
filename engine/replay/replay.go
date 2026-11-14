@@ -11,8 +11,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/recorder"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/recorder"
 )
 
 // Options controls a replay.

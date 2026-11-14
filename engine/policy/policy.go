@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
 )
 
 // Plane is the kind of traffic.

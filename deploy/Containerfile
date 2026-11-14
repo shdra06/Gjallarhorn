@@ -31,8 +31,8 @@ COPY engine/ /src/gjallarhorn/engine/
 COPY plugin/ ./gjallarhorn-plugin/
 ARG GJ_VERSION=dev
 RUN go mod edit \
-      -require=github.com/gjallarhorn-dev/gjallarhorn/engine@v0.0.0 \
-      -replace=github.com/gjallarhorn-dev/gjallarhorn/engine=/src/gjallarhorn/engine && \
+      -require=github.com/shdra06/Gjallarhorn/engine@v0.0.0 \
+      -replace=github.com/shdra06/Gjallarhorn/engine=/src/gjallarhorn/engine && \
     go build -buildmode=plugin -ldflags="-w -s -X main.Version=${GJ_VERSION}" -trimpath -tags sqlite_static \
       -o /out/gjallarhorn.so ./gjallarhorn-plugin
 

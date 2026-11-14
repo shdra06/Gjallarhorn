@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/identity"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/identity"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
 )
 
 var t0 = time.Date(2026, 11, 14, 10, 0, 0, 0, time.UTC)

@@ -19,11 +19,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gjallarhorn-dev/gjallarhorn/engine"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/control"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/gateway"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/policy"
-	"github.com/gjallarhorn-dev/gjallarhorn/engine/recorder"
+	"github.com/shdra06/Gjallarhorn/engine"
+	"github.com/shdra06/Gjallarhorn/engine/control"
+	"github.com/shdra06/Gjallarhorn/engine/gateway"
+	"github.com/shdra06/Gjallarhorn/engine/policy"
+	"github.com/shdra06/Gjallarhorn/engine/recorder"
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
