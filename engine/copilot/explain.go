@@ -109,7 +109,7 @@ func Grounded(in *incident.Incident, pol *policy.Policy) Explanation {
 	if f.Executed && !f.Decision.Allowed() {
 		ex.NextSteps = append(ex.NextSteps, "Switch Gjallarhorn to enforcing mode so flagged calls are blocked.")
 	}
-	ex.NextSteps = append(ex.NextSteps, fmt.Sprintf("Check what %s was asked to do and by whom (step 1).", in.Agents))
+	ex.NextSteps = append(ex.NextSteps, fmt.Sprintf("Check what %s asked for in step 1, and why %s acted on it.", in.Origin, strings.Join(in.Agents, ", ")))
 	return ex
 }
 
