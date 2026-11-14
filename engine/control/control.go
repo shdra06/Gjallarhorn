@@ -9,6 +9,7 @@ package control
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/shdra06/Gjallarhorn/engine"
+	"github.com/shdra06/Gjallarhorn/engine/copilot"
 	"github.com/shdra06/Gjallarhorn/engine/policy"
 	"github.com/shdra06/Gjallarhorn/engine/recorder"
 	"github.com/shdra06/Gjallarhorn/engine/replay"
@@ -37,12 +39,20 @@ type Options struct {
 	Version string
 	// Heartbeat is the SSE keep-alive interval (default 15s).
 	Heartbeat time.Duration
+	// Copilot is the model the AI co-pilot uses. Nil runs the co-pilot without a model:
+	// explanations come from the recorded facts and rules are synthesised, then proven the
+	// same way.
+	Copilot *copilot.LLM
 }
+
+// maxCopilotCalls bounds concurrent co-pilot requests, which can be slow and cost money.
+const maxCopilotCalls = 2
 
 type server struct {
 	e       *engine.Engine
 	opts    Options
 	origins map[string]bool
+	copilot chan struct{}
 }
 
 // NewHandler returns the API handler.
@@ -53,7 +63,7 @@ func NewHandler(e *engine.Engine, opts Options) (http.Handler, error) {
 	if opts.Heartbeat <= 0 {
 		opts.Heartbeat = 15 * time.Second
 	}
-	s := &server{e: e, opts: opts, origins: map[string]bool{}}
+	s := &server{e: e, opts: opts, origins: map[string]bool{}, copilot: make(chan struct{}, maxCopilotCalls)}
 	for _, o := range opts.AllowedOrigins {
 		s.origins[strings.TrimRight(o, "/")] = true
 	}
@@ -75,6 +85,12 @@ func NewHandler(e *engine.Engine, opts Options) (http.Handler, error) {
 	mux.Handle("GET /v1/stats", s.auth(s.stats))
 	mux.Handle("GET /v1/mode", s.auth(s.getMode))
 	mux.Handle("PUT /v1/mode", s.auth(s.putMode))
+	mux.Handle("GET /v1/incidents", s.auth(s.listIncidents))
+	mux.Handle("GET /v1/incidents/{seq}", s.auth(s.getIncident))
+	mux.Handle("GET /v1/copilot", s.auth(s.copilotInfo))
+	mux.Handle("POST /v1/copilot/explain", s.auth(s.busy(s.explain)))
+	mux.Handle("POST /v1/copilot/suggest", s.auth(s.busy(s.suggest)))
+	mux.Handle("POST /v1/copilot/apply", s.auth(s.apply))
 	return s.cors(mux), nil
 }
 
@@ -84,7 +100,8 @@ func (s *server) cors(next http.Handler) http.Handler {
 			h := w.Header()
 			h.Set("Access-Control-Allow-Origin", origin)
 			h.Set("Vary", "Origin")
-			h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Last-Event-ID, X-Operator")
+			h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, If-Match, Last-Event-ID, X-Operator")
+			h.Set("Access-Control-Expose-Headers", "ETag")
 			h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			h.Set("Access-Control-Max-Age", "600")
 		}
@@ -227,11 +244,23 @@ func (s *server) putPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Optimistic concurrency: if the client sends If-Match, it must match the current policy.
-	if want := strings.Trim(r.Header.Get("If-Match"), `"`); want != "" && want != engine.PolicyHash(s.e.Policy()) {
+	cur := s.e.Policy()
+	want := strings.Trim(r.Header.Get("If-Match"), `"`)
+	if want != "" && want != engine.PolicyHash(cur) {
 		writeError(w, http.StatusPreconditionFailed, "the policy changed since you loaded it; reload and try again")
 		return
 	}
-	if err := s.e.SetPolicy(&p, operator(r, "")); err != nil {
+	var err error
+	if want != "" {
+		err = s.e.ReplacePolicy(cur, &p, operator(r, ""))
+	} else {
+		err = s.e.SetPolicy(&p, operator(r, ""))
+	}
+	if errors.Is(err, engine.ErrPolicyChanged) {
+		writeError(w, http.StatusPreconditionFailed, "the policy changed since you loaded it; reload and try again")
+		return
+	}
+	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "policy is invalid", splitErrors(err)...)
 		return
 	}

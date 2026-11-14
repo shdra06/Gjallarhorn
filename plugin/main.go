@@ -22,6 +22,7 @@ import (
 	"github.com/maximhq/bifrost/core/schemas"
 	"github.com/shdra06/Gjallarhorn/engine"
 	"github.com/shdra06/Gjallarhorn/engine/control"
+	"github.com/shdra06/Gjallarhorn/engine/copilot"
 	"github.com/shdra06/Gjallarhorn/engine/gateway"
 	"github.com/shdra06/Gjallarhorn/engine/policy"
 	"github.com/shdra06/Gjallarhorn/engine/recorder"
@@ -60,7 +61,7 @@ func Init(config any) error {
 	var srv *http.Server
 	if !c.Control.Disabled {
 		h, err := control.NewHandler(e, control.Options{AdminToken: c.Control.AdminToken,
-			AllowedOrigins: c.Control.AllowedOrigins, Version: Version})
+			AllowedOrigins: c.Control.AllowedOrigins, Version: Version, Copilot: copilot.NewLLM(c.Copilot)})
 		if err != nil {
 			e.Close()
 			return fmt.Errorf("gjallarhorn: %w", err)

@@ -96,6 +96,13 @@ func TestParseConfig(t *testing.T) {
 	if _, err := ParseConfig(nil); err == nil {
 		t.Fatal("nil config")
 	}
+	cp := map[string]any{"endpoint": "http://127.0.0.1:8080", "model": "openai/gpt-4o-mini", "virtual_key": "env:CP_VK"}
+	if c, err := ParseConfig(map[string]any{"control": map[string]any{"disabled": true}, "copilot": cp}); err != nil || !c.Copilot.Enabled() {
+		t.Fatalf("copilot config: %+v %v", c.Copilot, err)
+	}
+	if _, err := ParseConfig(map[string]any{"control": map[string]any{"disabled": true}, "copilot": map[string]any{"endpoint": "http://x"}}); err == nil {
+		t.Fatal("a co-pilot endpoint without a model is a mistake")
+	}
 }
 
 func TestDenyBody(t *testing.T) {

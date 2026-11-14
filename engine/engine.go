@@ -383,9 +383,32 @@ func (e *Engine) SetPolicy(p *policy.Policy, by string) error {
 		return err
 	}
 	e.pol.Store(p)
+	e.recordPolicy(p, by)
+	return nil
+}
+
+// ErrPolicyChanged is returned by ReplacePolicy when the policy changed in the meantime.
+var ErrPolicyChanged = errors.New("the policy changed since it was loaded")
+
+// ReplacePolicy installs p only if the live policy is still old, so a read-check-write change
+// (like applying a proven co-pilot rule) never silently overwrites someone else's edit.
+func (e *Engine) ReplacePolicy(old, p *policy.Policy, by string) error {
+	if p == nil {
+		return errors.New("policy is nil")
+	}
+	if err := p.Validate(); err != nil {
+		return err
+	}
+	if !e.pol.CompareAndSwap(old, p) {
+		return ErrPolicyChanged
+	}
+	e.recordPolicy(p, by)
+	return nil
+}
+
+func (e *Engine) recordPolicy(p *policy.Policy, by string) {
 	_, _ = e.rec.Append(recorder.Event{Type: recorder.TypePolicy, Note: map[string]string{
 		"by": by, "policy_sha256": PolicyHash(p), "rules": fmt.Sprint(len(p.Rules))}})
-	return nil
 }
 
 // PolicyHash returns a stable fingerprint of a policy, recorded on every change.

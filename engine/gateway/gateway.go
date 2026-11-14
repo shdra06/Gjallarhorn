@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/shdra06/Gjallarhorn/engine"
+	"github.com/shdra06/Gjallarhorn/engine/copilot"
 	"github.com/shdra06/Gjallarhorn/engine/policy"
 )
 
@@ -36,6 +37,10 @@ type Config struct {
 	AcceptLabels bool `json:"accept_labels,omitempty"`
 	// MonitorOnly records every decision but never blocks. Useful for a first rollout.
 	MonitorOnly bool `json:"monitor_only,omitempty"`
+	// Copilot configures the model the AI co-pilot uses. Point it at this Bifrost with a
+	// virtual key of its own, so the co-pilot's model calls are governed and recorded too.
+	// Leave it out to run the co-pilot without a model.
+	Copilot copilot.Config `json:"copilot,omitempty"`
 }
 
 // ControlConfig configures the operator API the plugin serves on its own listener.
@@ -82,6 +87,9 @@ func ParseConfig(v any) (Config, error) {
 			return Config{}, errors.New("gjallarhorn: control.admin_token is required (use \"env:VAR\"), or set control.disabled")
 		}
 		c.Control.AdminToken = tok
+	}
+	if (c.Copilot.Endpoint == "") != (c.Copilot.Model == "") {
+		return Config{}, errors.New("gjallarhorn: copilot needs both endpoint and model (or neither)")
 	}
 	return c, nil
 }
