@@ -275,3 +275,38 @@ func TestCORS(t *testing.T) {
 		t.Fatal("unknown origins must not be allowed")
 	}
 }
+
+func TestModeSwitch(t *testing.T) {
+	srv, e := newServer(t)
+	if err := e.SetPolicy(&policy.Policy{Version: 1, Rules: []policy.Rule{{ID: "no-shell", Effect: policy.Deny, Lockdown: true,
+		Match: policy.Match{Targets: []string{"shell.*"}}}}}, "test"); err != nil {
+		t.Fatal(err)
+	}
+	if _, b := do(t, srv, "GET", "/v1/mode", ""); !strings.Contains(string(b), `"enforcing": true`) {
+		t.Fatalf("default mode: %s", b)
+	}
+	if r, b := do(t, srv, "PUT", "/v1/mode", `{"enforcing":false}`, "X-Operator", "human:priya"); r.StatusCode != 200 || !strings.Contains(string(b), `"enforcing": false`) {
+		t.Fatalf("switch to monitor: %d %s", r.StatusCode, b)
+	}
+	res := e.Check(engine.Request{Plane: policy.PlaneMCP, Target: "shell.exec", VirtualKey: "vk-support"})
+	if res.Decision.Allowed() || res.Block() || res.Locked || e.IsLocked("agent:support") {
+		t.Fatalf("monitor mode records the denial but must not block or lock: %+v", res)
+	}
+	if r, _ := do(t, srv, "PUT", "/v1/mode", `{}`); r.StatusCode != http.StatusBadRequest {
+		t.Fatalf("missing field: %d", r.StatusCode)
+	}
+	do(t, srv, "PUT", "/v1/mode", `{"enforcing":true}`)
+	res = e.Check(engine.Request{Plane: policy.PlaneMCP, Target: "shell.exec", VirtualKey: "vk-support"})
+	if !res.Block() || !e.IsLocked("agent:support") {
+		t.Fatalf("enforcing again: %+v", res)
+	}
+	var modes []string
+	for _, ev := range e.Recorder().Recent(0) {
+		if m := ev.Note["mode"]; m != "" && ev.Type == "policy" {
+			modes = append(modes, m+" by "+ev.Note["by"])
+		}
+	}
+	if strings.Join(modes, ",") != "monitor by human:priya,enforce by operator" {
+		t.Fatalf("mode changes must be recorded once each: %v", modes)
+	}
+}

@@ -19,12 +19,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/maximhq/bifrost/core/schemas"
 	"github.com/shdra06/Gjallarhorn/engine"
 	"github.com/shdra06/Gjallarhorn/engine/control"
 	"github.com/shdra06/Gjallarhorn/engine/gateway"
 	"github.com/shdra06/Gjallarhorn/engine/policy"
 	"github.com/shdra06/Gjallarhorn/engine/recorder"
-	"github.com/maximhq/bifrost/core/schemas"
 )
 
 // Version is set at build time with -ldflags "-X main.Version=...".
@@ -54,6 +54,9 @@ func Init(config any) error {
 	if err != nil {
 		return fmt.Errorf("gjallarhorn: %w", err)
 	}
+	// monitor_only in the config sets the starting mode; operators can switch it at runtime
+	// through the control API (PUT /v1/mode).
+	e.SetEnforcing(!c.MonitorOnly, "config")
 	var srv *http.Server
 	if !c.Control.Disabled {
 		h, err := control.NewHandler(e, control.Options{AdminToken: c.Control.AdminToken,
@@ -164,9 +167,6 @@ func forbidden(d policy.Decision) *schemas.BifrostError {
 	}
 }
 
-// block reports whether a decision should stop the call (monitor-only mode never blocks).
-func block(c gateway.Config, d policy.Decision) bool { return !d.Allowed() && !c.MonitorOnly }
-
 // HTTPTransportPreHook decides Agent Gateway calls and stamps the chain ticket on the request
 // that Bifrost forwards to the agent.
 func HTTPTransportPreHook(ctx *schemas.BifrostContext, req *schemas.HTTPRequest) (*schemas.HTTPResponse, error) {
@@ -191,7 +191,7 @@ func HTTPTransportPreHook(ctx *schemas.BifrostContext, req *schemas.HTTPRequest)
 		Label:      label,
 	})
 	ctx.SetValue(ctxDecided, true)
-	if block(c, res.Decision) {
+	if res.Block() {
 		return &schemas.HTTPResponse{
 			StatusCode: http.StatusForbidden,
 			Headers:    map[string]string{"Content-Type": "application/json"},
@@ -221,7 +221,7 @@ func PreA2AHook(ctx *schemas.BifrostContext, req *schemas.BifrostA2ARequest) (*s
 	h := headersOf(ctx)
 	res := e.Check(engine.Request{ID: requestIDOf(ctx), Plane: policy.PlaneA2A, Target: req.AgentName,
 		VirtualKey: credentialOf(ctx, h), Ticket: h[e.TicketHeader()], Label: labelOf(c, h)})
-	if block(c, res.Decision) {
+	if res.Block() {
 		return req, &schemas.A2APluginShortCircuit{Error: forbidden(res.Decision)}, nil
 	}
 	ctx.SetValue(ctxStart, time.Now())
@@ -247,7 +247,7 @@ func PreLLMHook(ctx *schemas.BifrostContext, req *schemas.BifrostRequest) (*sche
 	id := requestIDOf(ctx)
 	res := e.Check(engine.Request{ID: id, Plane: policy.PlaneLLM, Target: gateway.LLMTarget(string(provider), model),
 		VirtualKey: credentialOf(ctx, h), Ticket: h[e.TicketHeader()], Label: labelOf(c, h)})
-	if block(c, res.Decision) {
+	if res.Block() {
 		return req, &schemas.LLMPluginShortCircuit{Error: forbidden(res.Decision)}, nil
 	}
 	ctx.SetValue(ctxReqID, id)
@@ -273,7 +273,7 @@ func PreMCPHook(ctx *schemas.BifrostContext, req *schemas.BifrostMCPRequest) (*s
 	target := gateway.MCPTarget(req.ClientName, req.GetToolName(), string(req.RequestType))
 	res := e.Check(engine.Request{ID: id, Plane: policy.PlaneMCP, Target: target,
 		VirtualKey: credentialOf(ctx, h), Ticket: h[e.TicketHeader()], Label: labelOf(c, h)})
-	if block(c, res.Decision) {
+	if res.Block() {
 		return req, &schemas.MCPPluginShortCircuit{Error: forbidden(res.Decision)}, nil
 	}
 	ctx.SetValue(ctxReqID, id)

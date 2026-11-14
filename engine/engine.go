@@ -62,7 +62,13 @@ type Result struct {
 	TicketID string `json:"ticket_id,omitempty"`
 	// Locked is set when this decision locked the actor down (a rule with lockdown: true).
 	Locked bool `json:"locked,omitempty"`
+	// Enforced is false when the engine is in monitor-only mode: a deny decision is recorded
+	// but the call must be let through.
+	Enforced bool `json:"enforced"`
 }
+
+// Block reports whether the gateway must stop this call.
+func (r Result) Block() bool { return !r.Decision.Allowed() && r.Enforced }
 
 // Engine makes decisions. It is safe for concurrent use.
 type Engine struct {
@@ -75,6 +81,7 @@ type Engine struct {
 	pol       atomic.Pointer[policy.Policy]
 	grantsMu  sync.RWMutex
 	grants    []policy.Grant
+	monitor   atomic.Bool // true = record decisions but never block
 	now       func() time.Time
 	closeOnce sync.Once
 }
@@ -272,11 +279,16 @@ func (e *Engine) Delegate(req Request) Result {
 func (e *Engine) decide(req Request, r resolved, onAllow func(*Result)) Result {
 	now := r.facts.Time
 	d := policy.Evaluate(e.pol.Load(), r.facts, policy.Input{Locks: e.locks, Grants: e.activeGrants(now), Now: now})
-	res := Result{Decision: d, Facts: r.facts}
-	if d.Allowed() && onAllow != nil {
+	res := Result{Decision: d, Facts: r.facts, Enforced: !e.monitor.Load()}
+	if (d.Allowed() || !res.Enforced) && onAllow != nil {
+		// In monitor mode a delegation that would be denied still goes ahead, so it still needs
+		// a chain ticket for the hops after it to be tracked.
 		onAllow(&res)
 	}
 	note := map[string]string{}
+	if !res.Enforced {
+		note["mode"] = "monitor"
+	}
 	if req.Label != "" {
 		note["label"] = req.Label
 	}
@@ -294,7 +306,7 @@ func (e *Engine) decide(req Request, r resolved, onAllow func(*Result)) Result {
 	if err == nil {
 		res.Seq = ev.Seq
 	}
-	if !res.Decision.Allowed() && res.Decision.LockActor {
+	if !res.Decision.Allowed() && res.Decision.LockActor && res.Enforced {
 		if _, err := e.Lock(res.Facts.Actor.ID, res.Decision.Reason, "rule:"+res.Decision.RuleID, true, res.Decision.RuleID, time.Time{}); err == nil {
 			res.Locked = true
 		}
@@ -344,6 +356,23 @@ func (e *Engine) Lockdowns() []lockdown.Entry { return e.locks.List() }
 
 // IsLocked reports whether a principal is locked right now.
 func (e *Engine) IsLocked(principal string) bool { return e.locks.IsLocked(principal, e.now()) }
+
+// SetEnforcing switches between enforcing decisions (the default) and monitor-only mode, in
+// which every decision is still recorded but nothing is blocked and no automatic lockdown
+// happens. The change is recorded when the mode actually changes.
+func (e *Engine) SetEnforcing(on bool, by string) {
+	if e.monitor.Swap(!on) == !on {
+		return
+	}
+	mode := "enforce"
+	if !on {
+		mode = "monitor"
+	}
+	_, _ = e.rec.Append(recorder.Event{Type: recorder.TypePolicy, Note: map[string]string{"mode": mode, "by": by}})
+}
+
+// Enforcing reports whether decisions are enforced.
+func (e *Engine) Enforcing() bool { return !e.monitor.Load() }
 
 // SetPolicy validates and atomically replaces the policy.
 func (e *Engine) SetPolicy(p *policy.Policy, by string) error {

@@ -73,6 +73,8 @@ func NewHandler(e *engine.Engine, opts Options) (http.Handler, error) {
 	mux.Handle("GET /v1/events", s.auth(s.events))
 	mux.Handle("GET /v1/stream", s.auth(s.stream))
 	mux.Handle("GET /v1/stats", s.auth(s.stats))
+	mux.Handle("GET /v1/mode", s.auth(s.getMode))
+	mux.Handle("PUT /v1/mode", s.auth(s.putMode))
 	return s.cors(mux), nil
 }
 
@@ -354,6 +356,31 @@ func (s *server) events(w http.ResponseWriter, r *http.Request) {
 		limit = n
 	}
 	writeJSON(w, http.StatusOK, s.e.Recorder().Since(after, limit))
+}
+
+type modeBody struct {
+	// Enforcing is true when decisions block calls, false in monitor-only mode.
+	Enforcing *bool `json:"enforcing"`
+}
+
+func (s *server) getMode(w http.ResponseWriter, _ *http.Request) {
+	on := s.e.Enforcing()
+	writeJSON(w, http.StatusOK, modeBody{Enforcing: &on})
+}
+
+func (s *server) putMode(w http.ResponseWriter, r *http.Request) {
+	var body modeBody
+	if err := decode(r, &body); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if body.Enforcing == nil {
+		writeError(w, http.StatusBadRequest, "enforcing (true or false) is required")
+		return
+	}
+	s.e.SetEnforcing(*body.Enforcing, operator(r, ""))
+	on := s.e.Enforcing()
+	writeJSON(w, http.StatusOK, modeBody{Enforcing: &on})
 }
 
 func (s *server) stats(w http.ResponseWriter, _ *http.Request) {
