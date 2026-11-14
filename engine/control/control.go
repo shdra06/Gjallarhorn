@@ -43,6 +43,12 @@ type Options struct {
 	// explanations come from the recorded facts and rules are synthesised, then proven the
 	// same way.
 	Copilot *copilot.LLM
+	// ConsoleDir, when set, serves the operator console (the built single-page app) at "/".
+	ConsoleDir string
+	// DemoDriver, when set, forwards /demo/... (admin token required) to a demo traffic driver
+	// such as the attack lab's -serve mode, so the console can start demo traffic. Demo
+	// environments only.
+	DemoDriver string
 }
 
 // maxCopilotCalls bounds concurrent co-pilot requests, which can be slow and cost money.
@@ -91,6 +97,19 @@ func NewHandler(e *engine.Engine, opts Options) (http.Handler, error) {
 	mux.Handle("POST /v1/copilot/explain", s.auth(s.busy(s.explain)))
 	mux.Handle("POST /v1/copilot/suggest", s.auth(s.busy(s.suggest)))
 	mux.Handle("POST /v1/copilot/apply", s.auth(s.apply))
+	mux.HandleFunc("/v1/", func(w http.ResponseWriter, _ *http.Request) {
+		writeError(w, http.StatusNotFound, "no such endpoint")
+	})
+	if opts.DemoDriver != "" {
+		p, err := demoProxy(opts.DemoDriver)
+		if err != nil {
+			return nil, fmt.Errorf("control: demo driver: %w", err)
+		}
+		mux.Handle("/demo/", s.auth(p.ServeHTTP))
+	}
+	if opts.ConsoleDir != "" {
+		mux.Handle("/", console(opts.ConsoleDir))
+	}
 	return s.cors(mux), nil
 }
 
@@ -440,6 +459,10 @@ func (s *server) stream(w http.ResponseWriter, r *http.Request) {
 	h.Set("Connection", "keep-alive")
 	h.Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
+	// A comment right away, so proxies pass the response on before the first event.
+	if _, err := io.WriteString(w, ": connected\n\n"); err != nil {
+		return
+	}
 
 	last := after
 	send := func(e recorder.Event) error {

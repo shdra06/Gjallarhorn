@@ -52,6 +52,10 @@ type ControlConfig struct {
 	AdminToken     string   `json:"admin_token,omitempty"`
 	AllowedOrigins []string `json:"allowed_origins,omitempty"`
 	Disabled       bool     `json:"disabled,omitempty"`
+	// ConsoleDir serves the operator console from this directory at the control API's root.
+	ConsoleDir string `json:"console_dir,omitempty"`
+	// DemoDriver forwards /demo/ to a demo traffic driver (demo environments only).
+	DemoDriver string `json:"demo_driver,omitempty"`
 }
 
 // ParseConfig converts the untyped plugin config Bifrost passes to Init.

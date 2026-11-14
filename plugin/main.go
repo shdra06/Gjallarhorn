@@ -61,7 +61,8 @@ func Init(config any) error {
 	var srv *http.Server
 	if !c.Control.Disabled {
 		h, err := control.NewHandler(e, control.Options{AdminToken: c.Control.AdminToken,
-			AllowedOrigins: c.Control.AllowedOrigins, Version: Version, Copilot: copilot.NewLLM(c.Copilot)})
+			AllowedOrigins: c.Control.AllowedOrigins, Version: Version, Copilot: copilot.NewLLM(c.Copilot),
+			ConsoleDir: c.Control.ConsoleDir, DemoDriver: c.Control.DemoDriver})
 		if err != nil {
 			e.Close()
 			return fmt.Errorf("gjallarhorn: %w", err)
