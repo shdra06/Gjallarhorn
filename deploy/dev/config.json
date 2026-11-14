@@ -1,0 +1,85 @@
+{
+  "providers": {
+    "mock": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": { "chat_completion": true, "chat_completion_stream": true },
+        "request_path_overrides": {
+          "chat_completion": "/v1/chat/completions",
+          "chat_completion_stream": "/v1/chat/completions"
+        }
+      },
+      "network_config": { "base_url": "http://127.0.0.1:9000" },
+      "keys": [{ "name": "mock-key", "value": "mock-secret", "models": ["*"], "weight": 1.0 }]
+    }
+  },
+  "governance": {
+    "virtual_keys": [
+      { "id": "vk-priya", "name": "priya (operator)", "value": "sk-bf-priya-dev", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }] },
+      { "id": "vk-chat", "name": "customer chat app", "value": "sk-bf-chat-dev", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }] },
+      { "id": "vk-support", "name": "support agent", "value": "sk-bf-support-dev", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }] },
+      { "id": "vk-billing", "name": "billing agent", "value": "sk-bf-billing-dev", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }] },
+      { "id": "vk-research", "name": "research agent", "value": "sk-bf-research-dev", "is_active": true,
+        "provider_configs": [{ "provider": "mock", "allowed_models": ["*"], "key_ids": ["*"] }] }
+    ]
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "gjallarhorn",
+      "path": "/app/plugins/gjallarhorn.so",
+      "config": {
+        "principals": [
+          { "id": "human:priya", "kind": "human", "labels": { "role": "operator" }, "virtual_keys": ["sk-bf-priya-dev"] },
+          { "id": "service:customer-chat", "kind": "service", "labels": { "trust": "external" }, "virtual_keys": ["sk-bf-chat-dev"] },
+          { "id": "agent:support", "kind": "agent", "virtual_keys": ["sk-bf-support-dev"], "agent_names": ["support"] },
+          { "id": "agent:billing", "kind": "agent", "virtual_keys": ["sk-bf-billing-dev"], "agent_names": ["billing"] },
+          { "id": "agent:research", "kind": "agent", "virtual_keys": ["sk-bf-research-dev"], "agent_names": ["research"] }
+        ],
+        "tickets": {
+          "active_key": "dev-1",
+          "keys": { "dev-1": "env:GJ_TICKET_KEY" },
+          "ttl": "10m"
+        },
+        "recorder": { "path": "/app/data/gjallarhorn-flight.jsonl" },
+        "lockdown_file": "/app/data/gjallarhorn-lockdowns.json",
+        "control": {
+          "listen": "0.0.0.0:8787",
+          "admin_token": "env:GJ_ADMIN_TOKEN",
+          "allowed_origins": ["http://localhost:5173"]
+        },
+        "accept_labels": true,
+        "policy": {
+          "version": 1,
+          "guards": { "max_depth": 3 },
+          "rules": [
+            {
+              "id": "refunds-need-an-operator",
+              "description": "Refunds only when a human operator started the chain",
+              "effect": "deny",
+              "match": { "planes": ["mcp"], "targets": ["billing.refund*"] },
+              "unless": { "origin_kinds": ["human"], "origin_labels": { "role": "operator" } }
+            },
+            {
+              "id": "no-premium-models-for-research",
+              "description": "The research agent uses the standard model only",
+              "effect": "deny",
+              "match": { "planes": ["llm"], "actors": ["agent:research"], "targets": ["*premium*"] }
+            },
+            {
+              "id": "shell-access-locks-the-agent",
+              "description": "Any agent reaching for the shell is locked down",
+              "effect": "deny",
+              "lockdown": true,
+              "match": { "actor_kinds": ["agent"], "targets": ["shell.*", "*/shell*"] }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

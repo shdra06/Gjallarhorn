@@ -1,0 +1,48 @@
+# Bifrost with the Gjallarhorn plugin.
+#
+#   podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
+#
+# Go plugins only load when the host binary and the plugin are built with the same toolchain
+# and identical versions of every shared package. So both are built here, in one stage, from
+# Bifrost's own module graph. The binary is dynamically linked (Bifrost's documented
+# "DYNAMIC=1" build); the stock image is static and cannot load plugins.
+
+ARG BIFROST_REF=transports/v2.5.1
+
+FROM golang:1.27.3-alpine3.24@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS builder
+ARG BIFROST_REF
+RUN apk add --no-cache git gcc musl-dev sqlite-dev binutils binutils-gold
+ENV CGO_ENABLED=1 GOOS=linux GOWORK=off
+
+RUN git clone --depth 1 --branch "${BIFROST_REF}" https://github.com/maximhq/bifrost.git /src/bifrost
+WORKDIR /src/bifrost/transports
+RUN go mod download
+
+# The web UI is optional for Gjallarhorn (it has its own console). A placeholder keeps the
+# build fast; see docs for building with the full Bifrost UI.
+RUN rm -rf bifrost-http/ui && mkdir -p bifrost-http/ui && \
+    echo '<!doctype html><title>Bifrost</title><p>Bifrost API is running. The Gjallarhorn console is served separately.</p>' > bifrost-http/ui/index.html
+
+RUN go build -ldflags="-w -s -X main.Version=v2.5.1-dynamic" -trimpath -tags sqlite_static \
+      -o /out/bifrost-http ./bifrost-http
+
+# Add the engine as a local module and build the plugin inside Bifrost's module.
+COPY engine/ /src/gjallarhorn/engine/
+COPY plugin/ ./gjallarhorn-plugin/
+ARG GJ_VERSION=dev
+RUN go mod edit \
+      -require=github.com/gjallarhorn-dev/gjallarhorn/engine@v0.0.0 \
+      -replace=github.com/gjallarhorn-dev/gjallarhorn/engine=/src/gjallarhorn/engine && \
+    go build -buildmode=plugin -ldflags="-w -s -X main.Version=${GJ_VERSION}" -trimpath -tags sqlite_static \
+      -o /out/gjallarhorn.so ./gjallarhorn-plugin
+
+FROM alpine:3.23.7@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63
+RUN apk add --no-cache musl libgcc ca-certificates zlib curl && \
+    addgroup -S bifrost && adduser -S -G bifrost -h /app bifrost
+WORKDIR /app
+COPY --from=builder /out/bifrost-http /app/bifrost-http
+COPY --from=builder /out/gjallarhorn.so /app/plugins/gjallarhorn.so
+RUN mkdir -p /app/data && chown -R bifrost:bifrost /app/data
+USER bifrost
+EXPOSE 8080 8787
+ENTRYPOINT ["/app/bifrost-http", "-app-dir", "/app/data", "-port", "8080", "-host", "0.0.0.0"]

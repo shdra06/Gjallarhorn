@@ -1,0 +1,14 @@
+# Development image: Bifrost + Gjallarhorn, a mock model server and a sample config.
+#
+#   podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
+#   podman build -t gjallarhorn-dev -f deploy/dev/Containerfile .
+
+FROM golang:1.27.3-alpine3.24@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS mock
+COPY deploy/spike/mock/ /src/mock/
+RUN cd /src/mock && CGO_ENABLED=0 go build -trimpath -o /out/mock .
+
+FROM localhost/gjallarhorn-bifrost:latest
+COPY --from=mock /out/mock /app/mock
+COPY --chown=bifrost:bifrost deploy/dev/config.json /app/data/config.json
+COPY deploy/dev/run.sh /app/run.sh
+ENTRYPOINT ["/bin/sh", "/app/run.sh"]
