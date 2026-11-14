@@ -139,6 +139,9 @@ benign calls than before. The AI rule suggester will be held to this check.
 
 ## Measured performance
 
-See [benchmarks.md](benchmarks.md). Policy evaluation is about 0.4 µs and a lockdown check about
-40 ns. A full decision, including recording, is about 8–11 µs today. Phase 9 targets cutting this
-with a verified-ticket cache and off-path hashing.
+See [benchmarks.md](benchmarks.md):
+- Policy evaluation: about 0.4 µs.
+- Lockdown check: about 30 ns.
+- Chain-ticket check: about 0.15 µs (cached).
+- A full decision for a delegated call, as a request sees it: about 5 µs. The flight recorder seals
+  events in the background.

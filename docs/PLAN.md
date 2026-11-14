@@ -213,7 +213,19 @@ Full details: `docs/ARCHITECTURE.md`.
 - Small commits with clear messages. No secrets in the repo.
 - Privacy: no prompt content stored by default.
 
-## 9. Open items
+## 9. Progress (14 Nov 2026)
+
+| Phase | State |
+|---|---|
+| 0 Foundations | Done: repo, license, plan, CI workflow, Makefile |
+| 1 Feasibility spike | Done: plugin loads, sees keys and headers, blocks without fallback. A2A header forwarding to a real agent is pending until Phase 6 |
+| 2 Core engine | Done. Coverage is 75–96% per package; lockdown error paths still need tests to reach 90% |
+| 3 Recorder and replay | Done, with background sealing and tamper detection |
+| 4 Control API | Done, with an SSE stream |
+| 5 Plugin adapter | Done for all three planes. The LLM plane is verified against real Bifrost (16/16); MCP and A2A real-traffic checks come with the Phase 6 demo world |
+| 6–10 | Not started |
+
+## 10. Open items
 - [ ] Set the Go module path to the real repository URL once it is shared (currently
   `github.com/gjallarhorn-dev/gjallarhorn`).
 - [ ] Confirm the deadline in an official announcement (pages still say 15 Nov 2026, 11:59 PM).

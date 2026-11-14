@@ -8,6 +8,13 @@
 
 **Status:** under active development. See [docs/PLAN.md](docs/PLAN.md) for the full plan.
 
+| Done | Next |
+|---|---|
+| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | Demo world: real A2A agents and MCP tools, plus the attack lab |
+| Operator control API with a live event stream | AI co-pilot: incident explainer and rule suggester |
+| Bifrost plugin, running in real Bifrost v2.5.1 (16/16 integration checks pass) | 3D airspace console |
+| Feasibility spike ([results](docs/spike-results.md)) and [benchmarks](docs/benchmarks.md) | Published measurements, threat model, upstream PR |
+
 ## The problem
 
 Teams now run several AI agents that call models, use tools and ask each other for help. When one of
@@ -37,17 +44,42 @@ them is tricked, today's gateways can't answer basic questions:
 
 | Path | What it is |
 |---|---|
-| `engine/` | The core, in plain Go with no Bifrost dependency: identity, tickets, policy, lockdown, recorder, replay |
-| `docs/` | Plan, architecture, decisions |
-
-More components (the Bifrost plugin, demo world, console) land as the phases in the plan are completed.
+| `engine/` | The core, in plain Go with no Bifrost dependency: identity, tickets, policy, lockdown, recorder, replay, control API |
+| `plugin/` | The Bifrost plugin: a thin adapter from Bifrost's hooks to the engine |
+| `deploy/` | Container build for Bifrost and the plugin; a dev image with a mock model and integration tests; the Phase 1 spike |
+| `docs/` | Plan, architecture, benchmarks, spike results |
 
 ## Developing
+
+The engine runs and tests on any OS:
 
 ```bash
 cd engine
 go test ./...
 ```
+
+Race detector, benchmarks and fuzzing:
+
+```bash
+cd engine
+go test -race ./...
+go test -run XXX -bench . ./...
+go test ./ticket -run XXX -fuzz FuzzVerify -fuzztime 60s
+```
+
+The plugin needs Linux, because Go plugins don't load on Windows. Build Bifrost and the plugin in a
+container, then run the integration tests against the real gateway (use `docker` in place of
+`podman` if you prefer):
+
+```bash
+podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
+podman build -t gjallarhorn-dev -f deploy/dev/Containerfile .
+bash deploy/dev/test.sh
+```
+
+A clean build takes about 10–15 minutes, because Bifrost and the plugin are compiled together so
+their dependency versions match exactly. On Linux and macOS, the `Makefile` wraps all of these
+(`make test`, `make dev-image`, `make dev-test`).
 
 ## License
 
