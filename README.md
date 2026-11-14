@@ -12,12 +12,18 @@
 **4 of 11 attacks cause real harm without Gjallarhorn, and 0 of 11 with it**. All 7 pieces of normal
 work still get done, with **zero false blocks**.
 
+In the co-pilot fire drill, we removed a rule and let an attack through. The AI co-pilot explained
+what happened and suggested 9 rules. Replaying real traffic proved 3 of them safe and **rejected 6
+on its own**: 5 would have blocked normal work, 1 was malformed. The proven rule stopped the attack,
+and normal work kept running ([how](docs/copilot.md)).
+
 | Done | Next |
 |---|---|
-| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | AI co-pilot: incident explainer and rule suggester |
-| Operator control API with a live event stream and an enforce/monitor switch | 3D airspace console |
-| Bifrost plugin, running in real Bifrost v2.5.1 | Published measurements, threat model, upstream PR |
-| Demo world (4 A2A agents, 5 MCP tools) and an attack lab ([how it works](docs/attack-lab.md)) | Submission package |
+| Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | 3D airspace console |
+| Operator control API with a live event stream and an enforce/monitor switch | Published measurements, threat model, upstream PR |
+| Bifrost plugin, running in real Bifrost v2.5.1 | Submission package |
+| Demo world (4 A2A agents, 5 MCP tools) and an attack lab ([how it works](docs/attack-lab.md)) | |
+| AI co-pilot: incident explainer and a rule suggester proven by replay ([how it works](docs/copilot.md)) | |
 
 ## The problem
 
@@ -48,12 +54,12 @@ them is tricked, today's gateways can't answer basic questions:
 
 | Path | What it is |
 |---|---|
-| `engine/` | The core, in plain Go with no Bifrost dependency: identity, tickets, policy, lockdown, recorder, replay, control API |
+| `engine/` | The core, in plain Go with no Bifrost dependency: identity, tickets, policy, lockdown, recorder, replay, incidents, AI co-pilot, control API |
 | `plugin/` | The Bifrost plugin: a thin adapter from Bifrost's hooks to the engine |
-| `demo/` | The demo company (A2A agents, MCP tools, effects ledger) and the attack lab |
+| `demo/` | The demo company (A2A agents, MCP tools, effects ledger, mock model), the attack lab and the co-pilot fire drill |
 | `deploy/` | Container builds: Bifrost with the plugin, the full demo, a dev image with integration tests, the Phase 1 spike |
 | `results/` | Raw attack-lab reports behind every number we publish |
-| `docs/` | Plan, architecture, benchmarks, spike results |
+| `docs/` | Plan, architecture, co-pilot, attack lab, results, benchmarks, spike results |
 
 ## Developing
 

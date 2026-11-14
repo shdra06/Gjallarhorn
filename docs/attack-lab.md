@@ -55,13 +55,21 @@ The lab runs the whole suite twice:
 
 The difference is the harm Gjallarhorn prevents.
 
+Then it runs the **AI co-pilot fire drill**:
+- it removes a rule and lets an attack through;
+- it checks that the co-pilot closes the gap with a rule the replay proves safe;
+- it checks that unsafe suggestions are rejected automatically.
+
+See [copilot.md](copilot.md#fire-drill).
+
 ## Running it
 
 ```bash
 podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
 podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
-bash deploy/demo/run-lab.sh                     # both modes; report saved to results/
+bash deploy/demo/run-lab.sh                     # both modes, then the co-pilot drill; report saved to results/
 ONLY=borrowed-refund MODE=enforce bash deploy/demo/run-lab.sh
+MODE=drill bash deploy/demo/run-lab.sh          # only the co-pilot drill
 ```
 
 ## Scenarios

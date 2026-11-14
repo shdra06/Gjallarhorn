@@ -18,6 +18,11 @@ This document describes how Gjallarhorn works today. The phase plan is in [PLAN.
                                  │
                                  v
                     recorder (hash-chained log) ──> replay / control API / console
+                                 │
+                                 v
+          incident ──> AI co-pilot (explain, suggest) ──> proven by replay ──> apply
+                          │
+                          └── model calls go back through Bifrost with their own virtual key
 ```
 
 The **engine** (`engine/`) is plain Go with no Bifrost import. The **plugin** maps Bifrost's hook
@@ -135,7 +140,24 @@ The recorder writes JSON Lines, one event per decision, outcome or operator acti
 - per-label statistics for traffic tagged `attack` or `benign`.
 
 `Report.Safe()` passes only if the candidate blocks every attack the old policy blocked and no more
-benign calls than before. The AI rule suggester will be held to this check.
+benign calls than before.
+
+## AI co-pilot
+
+Details in [copilot.md](copilot.md). In short:
+- `incident.Build` rebuilds the whole chain around any recorded call by following chain tickets
+  up to the origin and back down.
+- `copilot.Explain` writes a grounded explanation from those facts. A model, called through
+  Bifrost with its own virtual key, may add a plain-English narrative, but it only sees the
+  recorded facts.
+- `copilot.Suggest` collects candidate rules: some synthesised from the incident, some from the
+  model, parsed strictly. It validates each one, rebases history under the current policy and
+  replays it with the candidate added:
+  - a rule that misses the call, or would block any benign call, is **rejected**;
+  - a rule that blocks other unlabelled calls goes to **review**;
+  - only a rule that blocks the call and nothing else is **proven**.
+- `POST /v1/copilot/apply` proves the rule again against everything recorded so far. It needs the
+  policy ETag, and installs the rule with a compare-and-swap.
 
 ## Measured performance
 

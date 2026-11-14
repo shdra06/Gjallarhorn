@@ -224,7 +224,8 @@ Full details: `docs/ARCHITECTURE.md`.
 | 4 Control API | Done, with an SSE stream |
 | 5 Plugin adapter | Done for all three planes, verified against real Bifrost: LLM (16/16 dev checks), MCP and A2A (attack lab) |
 | 6 Demo world and attack lab | Done: 4 real A2A agents, 5 MCP tool servers, an effects ledger and 18 scenarios. With Gjallarhorn: 0/11 attacks cause harm (4/11 without), 7/7 normal work done, 0 false blocks. See [results.md](results.md) |
-| 7–10 | Not started |
+| 7 AI co-pilot | Done: incident rebuilt from the flight recorder; grounded explainer with an optional model narrative through Bifrost; rule suggester whose rules are validated, replayed and ranked proven/review/rejected; apply re-proves and needs the policy ETag. Fire drill in real Bifrost: gap closed by a proven rule, 6/9 unsafe or malformed suggestions rejected automatically, 7/7 normal work. See [copilot.md](copilot.md) |
+| 8–10 | Not started |
 
 ## 10. Open items
 - [x] Set the Go module path to the real repository: `github.com/shdra06/Gjallarhorn`.
