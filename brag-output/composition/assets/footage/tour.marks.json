@@ -1,0 +1,57 @@
+{
+  "shot": "tour",
+  "length": 16.4,
+  "capturedFps": 25.5,
+  "marks": [
+    {
+      "name": "start",
+      "t": 0
+    },
+    {
+      "name": "vo:t1",
+      "t": 0.91
+    },
+    {
+      "name": "click",
+      "t": 5
+    },
+    {
+      "name": "replay",
+      "t": 5.14
+    },
+    {
+      "name": "vo:t2",
+      "t": 6.61
+    },
+    {
+      "name": "click",
+      "t": 7.66
+    },
+    {
+      "name": "click",
+      "t": 9
+    },
+    {
+      "name": "node-panel",
+      "t": 9.54,
+      "rect": {
+        "x": 1441,
+        "y": 49,
+        "w": 479,
+        "h": 863
+      }
+    },
+    {
+      "name": "table",
+      "t": 9.78
+    },
+    {
+      "name": "policy",
+      "t": 11.91
+    },
+    {
+      "name": "end",
+      "t": 15.04
+    }
+  ]
+}

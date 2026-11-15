@@ -1,0 +1,62 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--body); 
+      --ground: #060a13; --ground-2: #0a1120; --panel: #0c1424; --line: #1c2a40; --line-2: #26384f;
+      --ink: #e6edf7; --muted: #93a5bc; --cyan: #38e1ff; --red: #ff4d6a; --amber: #ffb020; --green: #3ddc97;
+      --display: 'Oswald', sans-serif; --body: 'Roboto', sans-serif; --mono: 'IBM Plex Mono', monospace; }
+    #root * { box-sizing: border-box; }
+    #close-fade { position: absolute; inset: 0; background: #060a13; z-index: 50; pointer-events: none; }
+
+    #close-term { position: absolute; top: 250px; left: 360px; width: 1200px; border-radius: 18px; background: #050811; border: 2px solid var(--line-2); overflow: hidden; }
+    #close-term .bar { height: 46px; background: var(--panel); display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+    #close-term .bar i { width: 14px; height: 14px; border-radius: 50%; background: var(--line-2); }
+    #close-term pre { margin: 0; padding: 30px 36px 40px; font-family: var(--mono); font-size: 34px; line-height: 1.7; color: var(--ink); }
+    #close-term pre span { display: block; }
+    #close-term pre span::before { content: "$ "; color: var(--green); }
+    #close-sub { position: absolute; top: 640px; left: 0; width: 100%; text-align: center; font-size: 34px; color: var(--muted); }
+    #close-end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; background: var(--ground); }
+    #close-row { display: flex; align-items: center; gap: 40px; }
+    #close-word { font-family: var(--display); font-weight: 700; font-size: 150px; letter-spacing: 0.1em; line-height: 1; }
+    #close-line { font-size: 44px; color: var(--ink); }
+    #close-url { font-family: var(--mono); font-size: 38px; color: var(--cyan); }
+    #close-event { font-size: 28px; color: var(--muted); }
+  </style>
+  <div id="root" data-composition-id="close" data-width="1920" data-height="1080">
+    <div id="close-termw" class="clip" data-start="0" data-duration="6.06">
+      <div id="close-term">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <pre><span id="close-c0">git clone https://github.com/shdra06/Gjallarhorn.git</span><span id="close-c1">cd Gjallarhorn</span><span id="close-c2">./demo.sh</span></pre>
+      </div>
+    </div>
+    <p id="close-sub" class="clip" data-start="0" data-duration="6.06">Podman or Docker · works offline</p>
+    <div id="close-end" class="clip" data-start="6.01" data-duration="8.02">
+      <div id="close-row"><svg id="close-logo" width="130" height="130" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="#0b1424" stroke="#26384f" stroke-width="1.5" />
+        <path d="M14 40c8-16 28-22 38-20-6 3-9 8-10 14l-6-2c-1 5-4 9-8 12l-2-6c-4 1-8 2-12 2z" fill="#38e1ff" />
+        <circle cx="46" cy="20" r="4" fill="#ff3b5c" />
+      </svg><div id="close-word">GJALLARHORN</div></div>
+      <p id="close-line">The horn that warns you when your agents go wrong.</p>
+      <p id="close-url">github.com/shdra06/Gjallarhorn</p>
+      <p id="close-event">Geek Room Global AI Hackathon 2026 · Bifrost track (PS04) · Apache 2.0</p>
+    </div>
+    <div id="close-fade" data-layout-ignore></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Dip from and to the ground at the scene's edges.
+    tl.set("#close-fade", { opacity: 1 }, 0);
+    tl.to("#close-fade", { opacity: 0, duration: 0.35, ease: "power2.out" }, 0);
+    // The film ends on the end card.
+    tl.fromTo("#close-term", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 0.7);
+    tl.fromTo("#close-c0", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.7, ease: "none" }, 1.63);
+    tl.fromTo("#close-c1", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.35, ease: "none" }, 2.37);
+    tl.fromTo("#close-c2", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.35, ease: "none" }, 3.02);
+    tl.fromTo("#close-sub", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 2.43);
+    tl.fromTo("#close-logo", { opacity: 0, scale: 0.7, rotation: -12 }, { opacity: 1, scale: 1, rotation: 0, duration: 0.45, ease: "back.out(1.6)" }, 6.06);
+    tl.fromTo("#close-word", { opacity: 0, scale: 1.1, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out" }, 6.11);
+    tl.fromTo("#close-line", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 7.01);
+    tl.fromTo("#close-url", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 9.94);
+    tl.fromTo("#close-event", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 10.24);
+    window.__timelines["close"] = tl;
+  </script>
+</template>

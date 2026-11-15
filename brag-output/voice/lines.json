@@ -1,0 +1,166 @@
+{
+  "voice": "af_heart",
+  "speed": 1.0,
+  "lines": [
+    {
+      "id": "i1",
+      "text": "A customer hid one sentence in a chat message."
+    },
+    {
+      "id": "i2",
+      "text": "Three agents later, fifty thousand rupees were about to leave."
+    },
+    {
+      "id": "i3",
+      "text": "Gjallarhorn caught it mid-air.",
+      "say": "Yallarhorn caught it mid-air."
+    },
+    {
+      "id": "i4",
+      "text": "Lock a rogue agent in under two milliseconds."
+    },
+    {
+      "id": "i5",
+      "text": "Let an AI co-pilot write the fix, and prove it first."
+    },
+    {
+      "id": "i6",
+      "text": "Thirty-one attacks. Zero harm."
+    },
+    {
+      "id": "i7",
+      "text": "Let me show you how."
+    },
+    {
+      "id": "p1",
+      "text": "Teams now run many AI agents. They call models, use tools, and ask each other for help."
+    },
+    {
+      "id": "p2",
+      "text": "When one of them is tricked, today's gateways can't tell you which agent did it, who asked whom, or whether a permission was borrowed."
+    },
+    {
+      "id": "p3",
+      "text": "OWASP calls that last one a confused deputy.",
+      "say": "Oh-wasp calls that last one a confused deputy."
+    },
+    {
+      "id": "p4",
+      "text": "Gjallarhorn is a plugin for the Bifrost AI gateway that answers all three, on every call.",
+      "say": "Yallarhorn is a plugin for the Bifrost AI gateway that answers all three, on every call."
+    },
+    {
+      "id": "a1",
+      "text": "This is the live console. Every flight is a real call crossing the gateway, between people, agents, tools and models."
+    },
+    {
+      "id": "a2",
+      "text": "Here's an attack. A customer message tells the support agent to get a refund. Support isn't allowed to refund, so it asks the billing agent, which is."
+    },
+    {
+      "id": "a3",
+      "text": "Bifrost allows every hop. Gjallarhorn sees the whole chain, and the refund stops mid-air.",
+      "say": "Bifrost allows every hop. Yallarhorn sees the whole chain, and the refund stops mid-air."
+    },
+    {
+      "id": "n1",
+      "text": "One click opens the incident: the chain from the customer chat, through support, to billing, and the rule that stopped it."
+    },
+    {
+      "id": "n2",
+      "text": "The AI co-pilot explains it in plain words, using only facts from the flight recorder."
+    },
+    {
+      "id": "n3",
+      "text": "If an agent misbehaves, I can lock it. Billing is cut off from models, tools and other agents on its very next call, and the people it works for keep their access."
+    },
+    {
+      "id": "n4",
+      "text": "We measured it. The next call is refused a median of one point eight milliseconds after the lock."
+    },
+    {
+      "id": "c1",
+      "text": "No policy is perfect. Here I remove the rule that stops outside chains from sending email."
+    },
+    {
+      "id": "c2",
+      "text": "The replay check calls it safe, because nothing recorded needed that rule. So I save."
+    },
+    {
+      "id": "c3",
+      "text": "Now a forum post tricks an agent into emailing customer data out. This time, harm is done."
+    },
+    {
+      "id": "c4",
+      "text": "I find the call in the table, open it, and ask the co-pilot for a rule."
+    },
+    {
+      "id": "c5",
+      "text": "It doesn't trust its own ideas. Every suggestion is replayed against all the traffic we recorded."
+    },
+    {
+      "id": "c6",
+      "text": "These three are proven safe."
+    },
+    {
+      "id": "c7",
+      "text": "Six were rejected on their own: five would block normal work, and one was malformed."
+    },
+    {
+      "id": "c8",
+      "text": "I apply a proven rule, and the server proves it again before switching it on."
+    },
+    {
+      "id": "c9",
+      "text": "Same attack, one more time. Blocked."
+    },
+    {
+      "id": "t1",
+      "text": "Every decision lands in a hash-chained flight recorder. I can replay the last minute of traffic,"
+    },
+    {
+      "id": "t2",
+      "text": "open any agent, browse every call in the table, and test a policy change against real traffic before I save it."
+    },
+    {
+      "id": "h1",
+      "text": "Under the hood, Gjallarhorn is a Go plugin that Bifrost loads through its official hooks. Bifrost isn't forked.",
+      "say": "Under the hood, Yallarhorn is a Go plugin that Bifrost loads through its official hooks. Bifrost isn't forked."
+    },
+    {
+      "id": "h2",
+      "text": "When one agent calls another, the gateway signs a chain ticket. Agents can drop it, but they can't forge it."
+    },
+    {
+      "id": "h3",
+      "text": "Every model, tool and agent call is checked against lockdowns and policy, in about fifty microseconds, and every decision is recorded."
+    },
+    {
+      "id": "r1",
+      "text": "To prove it, we built an attack lab: thirty-one attacks through the real gateway."
+    },
+    {
+      "id": "r2",
+      "text": "Without Gjallarhorn, twelve of them caused real harm. With it, none did.",
+      "say": "Without Yallarhorn, twelve of them caused real harm. With it, none did."
+    },
+    {
+      "id": "r3",
+      "text": "All eleven pieces of normal work still got done, with zero false blocks."
+    },
+    {
+      "id": "r4",
+      "text": "Every number links to its raw result file, and the threat model says plainly what Gjallarhorn does not protect against.",
+      "say": "Every number links to its raw result file, and the threat model says plainly what Yallarhorn does not protect against."
+    },
+    {
+      "id": "e1",
+      "text": "It's open source. Clone the repo, run one command, and launch an attack yourself."
+    },
+    {
+      "id": "e2",
+      "text": "Gjallarhorn. The horn that warns you when your agents go wrong.",
+      "say": "Yallarhorn. The horn that warns you when your agents go wrong."
+    }
+  ]
+}

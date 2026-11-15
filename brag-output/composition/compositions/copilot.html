@@ -1,0 +1,44 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--body); 
+      --ground: #060a13; --ground-2: #0a1120; --panel: #0c1424; --line: #1c2a40; --line-2: #26384f;
+      --ink: #e6edf7; --muted: #93a5bc; --cyan: #38e1ff; --red: #ff4d6a; --amber: #ffb020; --green: #3ddc97;
+      --display: 'Oswald', sans-serif; --body: 'Roboto', sans-serif; --mono: 'IBM Plex Mono', monospace; }
+    #root * { box-sizing: border-box; }
+    #copilot-fade { position: absolute; inset: 0; background: #060a13; z-index: 50; pointer-events: none; }
+
+    #copilot-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    #copilot-v { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+    #copilot-chapter { position: absolute; top: 74px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 30; }
+    #copilot-chapter span { font-family: var(--display); font-weight: 600; font-size: 30px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--ink); background: rgba(6, 10, 19, 0.86); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 10px 30px; }
+    #copilot-chapter b { color: var(--cyan); font-weight: 600; margin-right: 18px; }
+  </style>
+  <div id="root" data-composition-id="copilot" data-width="1920" data-height="1080">
+    <div id="copilot-cam">
+      <video id="copilot-v" class="clip" data-start="0" data-duration="50.22" data-media-start="0.1" data-track-index="0" muted playsinline src="assets/footage/copilot.mp4"></video>
+    </div>
+    <div id="copilot-chapter" class="clip" data-start="0.25" data-duration="3.4"><span><b>03</b>The AI co-pilot closes a gap</span></div>
+    <div id="copilot-fade" data-layout-ignore></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Dip from and to the ground at the scene's edges.
+    tl.set("#copilot-fade", { opacity: 1 }, 0);
+    tl.to("#copilot-fade", { opacity: 0, duration: 0.35, ease: "power2.out" }, 0);
+    tl.fromTo("#copilot-fade", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.in", immediateRender: false }, 49.9);
+    tl.set("#copilot-cam", { scale: 1, x: 0, y: 0 }, 0);
+    tl.fromTo("#copilot-cam", { scale: 1, x: 0, y: 0 }, { scale: 1.8, x: -1536, y: 0, duration: 0.8, ease: "power2.inOut", immediateRender: false }, 6.94);
+    tl.fromTo("#copilot-cam", { scale: 1.8, x: -1536, y: 0 }, { scale: 1, x: 0, y: 0, duration: 0.7, ease: "power2.inOut", immediateRender: false }, 12.67);
+    tl.fromTo("#copilot-cam", { scale: 1, x: 0, y: 0 }, { scale: 1.9, x: -1728, y: -972, duration: 0.8, ease: "power2.inOut", immediateRender: false }, 17.09);
+    tl.fromTo("#copilot-cam", { scale: 1.9, x: -1728, y: -972 }, { scale: 1, x: 0, y: 0, duration: 0.7, ease: "power2.inOut", immediateRender: false }, 18.7);
+    tl.fromTo("#copilot-cam", { scale: 1, x: 0, y: 0 }, { scale: 1.48, x: -914, y: -21, duration: 0.8, ease: "power2.inOut", immediateRender: false }, 23.49);
+    tl.fromTo("#copilot-cam", { scale: 1.48, x: -914, y: -21 }, { scale: 1.6, x: -576, y: -324, duration: 0.6, ease: "power2.inOut", immediateRender: false }, 40);
+    tl.fromTo("#copilot-cam", { scale: 1.6, x: -576, y: -324 }, { scale: 1.48, x: -914, y: -21, duration: 0.6, ease: "power2.inOut", immediateRender: false }, 41.43);
+    tl.fromTo("#copilot-cam", { scale: 1.48, x: -914, y: -21 }, { scale: 1, x: 0, y: 0, duration: 0.6, ease: "power2.inOut", immediateRender: false }, 42.05);
+    tl.fromTo("#copilot-cam", { scale: 1, x: 0, y: 0 }, { scale: 1.9, x: -1728, y: -972, duration: 0.8, ease: "power2.inOut", immediateRender: false }, 46.73);
+    tl.fromTo("#copilot-chapter span", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power3.out" }, 0.3);
+    tl.to("#copilot-chapter span", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, 3.4);
+    window.__timelines["copilot"] = tl;
+  </script>
+</template>

@@ -3,6 +3,11 @@
 **Target:** under 3 minutes, a human voice, and the wow moment in the first 30 seconds. Every shot
 is the real console against the real demo stack, with no mock-ups.
 
+**Already built:** a narrated video (about 3:50, a launch intro followed by this walk-through,
+with captions) is generated from the running demo by `console/scripts/record.mjs` and
+`brag-output/build.mjs`. See [brag-output/README.md](../brag-output/README.md). The script below is
+for recording a version with a human voice.
+
 ## Before recording
 
 1. Run `./demo.sh` and open <http://localhost:18788/> in a clean browser window at 1440×900 (or

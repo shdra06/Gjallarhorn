@@ -39,7 +39,9 @@ npm run build      # type-check, then build to console/dist
 ```
 
 The README screenshots come from a running demo, taken with headless Chrome or Edge:
-`node console/scripts/screenshots.mjs` (saves to `docs/images/`).
+`node console/scripts/screenshots.mjs` (saves to `docs/images/`). The demo video's footage is
+recorded the same way, with a drawn pointer, by `node console/scripts/record.mjs` (see
+[brag-output/README.md](../brag-output/README.md)).
 
 ## What's on screen
 

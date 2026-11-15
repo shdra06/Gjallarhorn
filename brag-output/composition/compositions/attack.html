@@ -1,0 +1,43 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--body); 
+      --ground: #060a13; --ground-2: #0a1120; --panel: #0c1424; --line: #1c2a40; --line-2: #26384f;
+      --ink: #e6edf7; --muted: #93a5bc; --cyan: #38e1ff; --red: #ff4d6a; --amber: #ffb020; --green: #3ddc97;
+      --display: 'Oswald', sans-serif; --body: 'Roboto', sans-serif; --mono: 'IBM Plex Mono', monospace; }
+    #root * { box-sizing: border-box; }
+    #attack-fade { position: absolute; inset: 0; background: #060a13; z-index: 50; pointer-events: none; }
+
+    #attack-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    #attack-v { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+    #attack-chapter { position: absolute; top: 74px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 30; }
+    #attack-chapter span { font-family: var(--display); font-weight: 600; font-size: 30px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--ink); background: rgba(6, 10, 19, 0.86); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 10px 30px; }
+    #attack-chapter b { color: var(--cyan); font-weight: 600; margin-right: 18px; }
+  </style>
+  <div id="root" data-composition-id="attack" data-width="1920" data-height="1080">
+    <div id="attack-cam">
+      <video id="attack-v" class="clip" data-start="0" data-duration="57.29" data-media-start="0.29" data-track-index="0" muted playsinline src="assets/footage/hook.mp4"></video>
+    </div>
+    <div id="attack-chapter" class="clip" data-start="0.25" data-duration="3.4"><span><b>02</b>An attack, live</span></div>
+    <div id="attack-fade" data-layout-ignore></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Dip from and to the ground at the scene's edges.
+    tl.set("#attack-fade", { opacity: 1 }, 0);
+    tl.to("#attack-fade", { opacity: 0, duration: 0.35, ease: "power2.out" }, 0);
+    tl.fromTo("#attack-fade", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.in", immediateRender: false }, 56.97);
+    tl.set("#attack-cam", { scale: 1, x: 0, y: 0 }, 0);
+    tl.fromTo("#attack-cam", { scale: 1, x: 0, y: 0 }, { scale: 1.57, x: 0, y: -538, duration: 0.8, ease: "power2.inOut", immediateRender: false }, 11.55);
+    tl.fromTo("#attack-cam", { scale: 1.57, x: 0, y: -538 }, { scale: 1, x: 0, y: 0, duration: 0.7, ease: "power2.inOut", immediateRender: false }, 19.92);
+    tl.fromTo("#attack-cam", { scale: 1, x: 0, y: 0 }, { scale: 1.57, x: -542, y: 0, duration: 0.9, ease: "power2.inOut", immediateRender: false }, 21.48);
+    tl.fromTo("#attack-cam", { scale: 1.57, x: -542, y: 0 }, { scale: 1.48, x: -914, y: 0, duration: 0.8, ease: "power2.inOut", immediateRender: false }, 28.06);
+    tl.fromTo("#attack-cam", { scale: 1.48, x: -914, y: 0 }, { scale: 1.48, x: -914, y: -514, duration: 1, ease: "power2.inOut", immediateRender: false }, 34.19);
+    tl.fromTo("#attack-cam", { scale: 1.48, x: -914, y: -514 }, { scale: 1.6, x: -576, y: -325, duration: 0.6, ease: "power2.inOut", immediateRender: false }, 41.79);
+    tl.fromTo("#attack-cam", { scale: 1.6, x: -576, y: -325 }, { scale: 1.42, x: -138, y: -80, duration: 0.9, ease: "power2.inOut", immediateRender: false }, 43.6);
+    tl.fromTo("#attack-cam", { scale: 1.42, x: -138, y: -80 }, { scale: 1, x: 0, y: 0, duration: 1.2, ease: "power2.inOut", immediateRender: false }, 49.76);
+    tl.fromTo("#attack-chapter span", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power3.out" }, 0.3);
+    tl.to("#attack-chapter span", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, 3.4);
+    window.__timelines["attack"] = tl;
+  </script>
+</template>

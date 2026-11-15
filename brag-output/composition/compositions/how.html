@@ -1,0 +1,86 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--body); 
+      --ground: #060a13; --ground-2: #0a1120; --panel: #0c1424; --line: #1c2a40; --line-2: #26384f;
+      --ink: #e6edf7; --muted: #93a5bc; --cyan: #38e1ff; --red: #ff4d6a; --amber: #ffb020; --green: #3ddc97;
+      --display: 'Oswald', sans-serif; --body: 'Roboto', sans-serif; --mono: 'IBM Plex Mono', monospace; }
+    #root * { box-sizing: border-box; }
+    #how-fade { position: absolute; inset: 0; background: #060a13; z-index: 50; pointer-events: none; }
+
+    #how-chapter { position: absolute; top: 74px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 30; }
+    #how-chapter span { font-family: var(--display); font-weight: 600; font-size: 30px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--ink); background: rgba(6, 10, 19, 0.86); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 10px 30px; }
+    #how-chapter b { color: var(--cyan); font-weight: 600; margin-right: 18px; }
+    #how-row { position: absolute; top: 230px; left: 120px; width: 1680px; display: flex; align-items: center; gap: 34px; }
+    .how-end { width: 300px; padding: 30px; border-radius: 20px; background: var(--panel); border: 2px solid var(--line-2); text-align: center; font-size: 32px; line-height: 1.35; color: var(--ink); }
+    .how-end small { display: block; margin-top: 8px; font-size: 28px; color: var(--muted); }
+    .how-arrow { font-size: 46px; color: var(--muted); }
+    #how-bifrost { flex: 1; padding: 30px 36px 36px; border-radius: 24px; border: 2px solid var(--line-2); background: var(--ground-2); }
+    #how-bifrost h3 { margin: 0 0 18px; font-family: var(--display); font-weight: 600; font-size: 38px; letter-spacing: 0.14em; color: var(--muted); }
+    #how-hooks { display: flex; gap: 14px; font-family: var(--mono); font-size: 28px; }
+    #how-hooks span { padding: 10px 16px; border-radius: 10px; border: 1.5px solid var(--line-2); color: var(--ink); }
+    #how-plugin { margin-top: 22px; padding: 18px 24px; border-radius: 14px; border: 2px solid var(--cyan); color: var(--cyan); font-size: 32px; font-weight: 700; display: flex; justify-content: space-between; }
+    #how-plugin small { color: var(--muted); font-weight: 400; font-size: 28px; }
+    #how-ticket { position: absolute; top: 560px; left: 120px; width: 760px; padding: 30px 36px; border-radius: 20px; background: var(--panel); border: 2px dashed var(--line-2); }
+    #how-ticket h4 { margin: 0 0 16px; font-family: var(--display); font-weight: 600; font-size: 32px; letter-spacing: 0.12em; color: var(--muted); }
+    #how-ticket code { display: block; font-family: var(--mono); font-size: 30px; color: var(--ink); }
+    #how-ticket p { margin: 18px 0 0; font-size: 30px; color: var(--ink); }
+    #how-ticket p b { color: var(--green); }
+    #how-ticket p i { font-style: normal; color: var(--red); }
+    #how-pipe { position: absolute; top: 560px; left: 940px; width: 860px; }
+    #how-pipe h4 { margin: 0 0 18px; font-family: var(--display); font-weight: 600; font-size: 32px; letter-spacing: 0.12em; color: var(--muted); }
+    #how-steps { display: flex; flex-wrap: wrap; gap: 14px; }
+    #how-steps span { padding: 14px 22px; border-radius: 999px; background: var(--panel); border: 2px solid var(--line-2); font-size: 30px; }
+    #how-steps span.rec { border-color: var(--cyan); color: var(--cyan); }
+    #how-time { margin-top: 26px; font-size: 32px; color: var(--ink); }
+    #how-time b { font-family: var(--display); font-size: 54px; color: var(--cyan); margin-right: 14px; }
+  </style>
+  <div id="root" data-composition-id="how" data-width="1920" data-height="1080">
+    <div id="how-chapter" class="clip" data-start="0.25" data-duration="3.4"><span><b>05</b>How it works</span></div>
+    <div id="how-row">
+      <div id="how-caller" class="how-end">people, apps<br />and agents<small>calls with their own keys</small></div>
+      <div class="how-arrow">→</div>
+      <div id="how-bifrost">
+        <h3>BIFROST · NOT FORKED</h3>
+        <div id="how-hooks"><span>HTTP transport</span><span>PreLLM</span><span>PreMCP</span><span>PreA2A</span></div>
+        <div id="how-plugin">Gjallarhorn plugin<small>official plugin hooks · Go</small></div>
+      </div>
+      <div class="how-arrow">→</div>
+      <div id="how-up" class="how-end">models, tools<br />and agents<small>upstream</small></div>
+    </div>
+    <div id="how-ticket">
+      <h4>CHAIN TICKET · SIGNED BY THE GATEWAY</h4>
+      <code>customer-chat › support › billing</code>
+      <p><b>Agents can drop it.</b> <i>They can’t forge it.</i></p>
+    </div>
+    <div id="how-pipe">
+      <h4>EVERY MODEL, TOOL AND AGENT CALL</h4>
+      <div id="how-steps"><span id="how-s0">identity</span><span id="how-s1">chain ticket</span><span id="how-s2">lockdowns</span><span id="how-s3">policy</span><span id="how-s4" class="rec">flight recorder</span></div>
+      <div id="how-time"><b>45–56 µs</b>median decision inside the running gateway</div>
+    </div>
+    <div id="how-fade" data-layout-ignore></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Dip from and to the ground at the scene's edges.
+    tl.set("#how-fade", { opacity: 1 }, 0);
+    tl.to("#how-fade", { opacity: 0, duration: 0.35, ease: "power2.out" }, 0);
+    tl.fromTo("#how-fade", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.in", immediateRender: false }, 23.88);
+    tl.fromTo("#how-chapter span", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power3.out" }, 0.3);
+    tl.to("#how-chapter span", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, 3.4);
+    tl.fromTo("#how-caller", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.4, ease: "expo.out" }, 0.9);
+    tl.fromTo("#how-bifrost", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out" }, 1.2);
+    tl.fromTo("#how-up", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.4, ease: "expo.out" }, 1.5);
+    tl.fromTo("#how-plugin", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "power3.out" }, 2.82);
+    tl.fromTo("#how-ticket", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 8);
+    tl.fromTo("#how-ticket p", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 11.97);
+    tl.fromTo("#how-pipe h4", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 14.73);
+    tl.fromTo("#how-s0", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 14.93);
+    tl.fromTo("#how-s1", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 15.25);
+    tl.fromTo("#how-s2", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 15.57);
+    tl.fromTo("#how-s3", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 15.89);
+    tl.fromTo("#how-s4", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 16.21);
+    tl.fromTo("#how-time", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3 }, 19.79);
+    window.__timelines["how"] = tl;
+  </script>
+</template>

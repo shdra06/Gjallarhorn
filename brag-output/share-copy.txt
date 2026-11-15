@@ -1,0 +1,1 @@
+Gjallarhorn: badges, chain tracking, an agent lockdown button and a flight recorder for AI agents, built into the Bifrost AI gateway. In a real Bifrost, 12 of 31 attacks did real harm without it, and 0 with it. github.com/shdra06/Gjallarhorn

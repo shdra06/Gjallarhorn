@@ -35,3 +35,14 @@ console/dist/
 
 # Local tool settings
 .claude/
+
+# Video: rendered files and recordings are rebuilt (see brag-output/README.md)
+/brag-output/*.mp4
+/brag-output/check.*
+/brag-output/render.log
+/brag-output/composition/.hyperframes/
+/brag-output/composition/assets/footage/*.mp4
+/brag-output/composition/assets/vo/
+/brag-output/composition/AGENTS.md
+/brag-output/composition/CLAUDE.md
+/brag-output/.*.hf-transaction-*/

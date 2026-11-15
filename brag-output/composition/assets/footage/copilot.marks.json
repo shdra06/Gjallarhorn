@@ -1,0 +1,225 @@
+{
+  "shot": "copilot",
+  "length": 50.92,
+  "capturedFps": 38.8,
+  "marks": [
+    {
+      "name": "start",
+      "t": 0
+    },
+    {
+      "name": "vo:c1",
+      "t": 1
+    },
+    {
+      "name": "policy-view",
+      "t": 1.03
+    },
+    {
+      "name": "click",
+      "t": 4.25
+    },
+    {
+      "name": "rule-picked",
+      "t": 4.35
+    },
+    {
+      "name": "rule-removed",
+      "t": 6.41,
+      "rect": {
+        "x": 280,
+        "y": -1015,
+        "w": 1260,
+        "h": 2095
+      }
+    },
+    {
+      "name": "vo:c2",
+      "t": 7.23
+    },
+    {
+      "name": "replay-checked",
+      "t": 7.24,
+      "rect": {
+        "x": 1540,
+        "y": -1015,
+        "w": 380,
+        "h": 2095
+      }
+    },
+    {
+      "name": "click",
+      "t": 11.94
+    },
+    {
+      "name": "saved",
+      "t": 12.57
+    },
+    {
+      "name": "vo:c3",
+      "t": 12.58
+    },
+    {
+      "name": "airspace",
+      "t": 12.61
+    },
+    {
+      "name": "click",
+      "t": 16.72
+    },
+    {
+      "name": "click-attack",
+      "t": 16.83
+    },
+    {
+      "name": "harm",
+      "t": 17.04,
+      "rect": {
+        "x": 1524,
+        "y": 922,
+        "w": 380,
+        "h": 84
+      }
+    },
+    {
+      "name": "vo:c4",
+      "t": 19.1
+    },
+    {
+      "name": "table",
+      "t": 19.2
+    },
+    {
+      "name": "click",
+      "t": 21.48
+    },
+    {
+      "name": "filtered",
+      "t": 22.38,
+      "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 1920,
+        "h": 1029
+      }
+    },
+    {
+      "name": "click",
+      "t": 23.37
+    },
+    {
+      "name": "incident-open",
+      "t": 23.49,
+      "rect": {
+        "x": 1471,
+        "y": 49,
+        "w": 479,
+        "h": 247
+      }
+    },
+    {
+      "name": "click",
+      "t": 25.14
+    },
+    {
+      "name": "suggest",
+      "t": 25.25
+    },
+    {
+      "name": "vo:c5",
+      "t": 25.26
+    },
+    {
+      "name": "suggestions",
+      "t": 25.47
+    },
+    {
+      "name": "proven-cards",
+      "t": 29.06,
+      "rect": {
+        "x": 1441,
+        "y": -959,
+        "w": 479,
+        "h": 3141
+      }
+    },
+    {
+      "name": "vo:c6",
+      "t": 31.42
+    },
+    {
+      "name": "vo:c7",
+      "t": 33.12
+    },
+    {
+      "name": "rejected-cards",
+      "t": 35.1,
+      "rect": {
+        "x": 1441,
+        "y": -1714,
+        "w": 479,
+        "h": 3141
+      }
+    },
+    {
+      "name": "vo:c8",
+      "t": 37.57
+    },
+    {
+      "name": "click",
+      "t": 40.08
+    },
+    {
+      "name": "apply-dialog",
+      "t": 40.2,
+      "rect": {
+        "x": 700,
+        "y": 448,
+        "w": 520,
+        "h": 184
+      }
+    },
+    {
+      "name": "click",
+      "t": 41.12
+    },
+    {
+      "name": "applied",
+      "t": 41.43
+    },
+    {
+      "name": "airspace-again",
+      "t": 42.32
+    },
+    {
+      "name": "vo:c9",
+      "t": 45.26
+    },
+    {
+      "name": "click",
+      "t": 46.38
+    },
+    {
+      "name": "click-attack-again",
+      "t": 46.49
+    },
+    {
+      "name": "stopped",
+      "t": 46.73,
+      "rect": {
+        "x": 1524,
+        "y": 902,
+        "w": 380,
+        "h": 104
+      }
+    },
+    {
+      "name": "stopped-marker",
+      "t": 46.74
+    },
+    {
+      "name": "end",
+      "t": 50.12
+    }
+  ]
+}
