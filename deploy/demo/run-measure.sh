@@ -31,10 +31,17 @@ start() { # $1 = on|off
     if curl -fsS "http://localhost:${GW}/health" >/dev/null 2>&1; then break; fi
     sleep 1
   done
-  sleep 3 # let Bifrost finish connecting to the tools and agents
-  if [ "$1" = "on" ] && ! curl -fsS "http://localhost:${CP}/v1/health" >/dev/null 2>&1; then
-    echo "Gjallarhorn did not come up"; $ENGINE logs "$NAME" 2>&1 | tail -30; exit 1
+  if [ "$1" = "on" ]; then
+    # The plugin starts after Bifrost's own start-up work (migrations can take a while).
+    for i in $(seq 1 60); do
+      if curl -fsS "http://localhost:${CP}/v1/health" >/dev/null 2>&1; then break; fi
+      sleep 1
+    done
+    if ! curl -fsS "http://localhost:${CP}/v1/health" >/dev/null 2>&1; then
+      echo "Gjallarhorn did not come up"; $ENGINE logs "$NAME" 2>&1 | tail -30; exit 1
+    fi
   fi
+  sleep 3 # let Bifrost finish connecting to the tools and agents
   if [ "$1" = "off" ] && curl -fsS "http://localhost:${CP}/v1/health" >/dev/null 2>&1; then
     echo "the plugin should be off, but the control API answers"; exit 1
   fi

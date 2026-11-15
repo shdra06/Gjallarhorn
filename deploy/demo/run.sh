@@ -23,6 +23,7 @@ if [ "${GJ_PLUGIN:-on}" = "off" ]; then
   sed -i 's/^      "enabled": true,$/      "enabled": false,/' /app/data/config.json
   grep -q '"enabled": false,' /app/data/config.json || { echo "could not switch the plugin off"; exit 1; }
   echo "Gjallarhorn plugin is OFF (measurement mode)"
+  export GJ_REQUIRE_PLUGIN=0
 fi
 echo "demo world ready; starting Bifrost"
-exec /app/bifrost-http -app-dir /app/data -port 8080 -host 0.0.0.0 -log-level info -log-style json
+exec /bin/sh /app/guard.sh /app/bifrost-http -app-dir /app/data -port 8080 -host 0.0.0.0 -log-level info -log-style json

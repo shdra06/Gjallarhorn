@@ -42,7 +42,9 @@ RUN apk add --no-cache musl libgcc ca-certificates zlib curl && \
 WORKDIR /app
 COPY --from=builder /out/bifrost-http /app/bifrost-http
 COPY --from=builder /out/gjallarhorn.so /app/plugins/gjallarhorn.so
+# Bifrost serves traffic even when a plugin fails to load; the guard fails closed instead.
+COPY deploy/guard.sh /app/guard.sh
 RUN mkdir -p /app/data && chown -R bifrost:bifrost /app/data
 USER bifrost
 EXPOSE 8080 8787
-ENTRYPOINT ["/app/bifrost-http", "-app-dir", "/app/data", "-port", "8080", "-host", "0.0.0.0"]
+ENTRYPOINT ["/bin/sh", "/app/guard.sh", "/app/bifrost-http", "-app-dir", "/app/data", "-port", "8080", "-host", "0.0.0.0"]
