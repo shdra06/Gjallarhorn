@@ -129,8 +129,17 @@ offline, so it ships a scripted stand-in model, which labels its explanations as
 
 ## AI tools used to build Gjallarhorn
 
-> **[To be completed by the team: list the AI tools used while building Gjallarhorn and what they
-> were used for, as the hackathon rules require.]**
+The idea, the design and the direction of Gjallarhorn are our own:
+- choosing the problem and the product idea: chain tickets, the lockdown button, the flight
+  recorder, replay, and an AI co-pilot that has to prove its own rules;
+- the security approach: the threat model, the attack scenarios, what counts as safe, and the
+  hardening decisions;
+- the refinement at every phase: what to build next, what to measure, and what to change.
+
+**Claude Code** (by Anthropic) was our coding assistant. It worked from our instructions: it wrote
+code, tests and draft documentation, ran the builds and tests we asked for, and reported the
+results back to us. It did not choose what Gjallarhorn is or how it should protect agents; those
+decisions were ours.
 
 ## Documentation
 
