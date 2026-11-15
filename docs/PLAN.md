@@ -219,11 +219,11 @@ Full details: `docs/ARCHITECTURE.md`.
 |---|---|
 | 0 Foundations | Done: repo, license, plan, CI workflow, Makefile |
 | 1 Feasibility spike | Done: all four questions answered. A2A header forwarding was proven by the Phase 6 demo world |
-| 2 Core engine | Done. Coverage is 75–96% per package; lockdown error paths still need tests to reach 90% |
+| 2 Core engine | Done. Coverage is 95.1% overall and at least 90% in every package (lowest: lockdown 91.9%); CI fails below 90% |
 | 3 Recorder and replay | Done, with background sealing and tamper detection |
 | 4 Control API | Done, with an SSE stream |
 | 5 Plugin adapter | Done for all three planes, verified against real Bifrost: LLM (16/16 dev checks), MCP and A2A (attack lab) |
-| 6 Demo world and attack lab | Done: 4 real A2A agents, 5 MCP tool servers, an effects ledger and 18 scenarios. With Gjallarhorn: 0/11 attacks cause harm (4/11 without), 7/7 normal work done, 0 false blocks. See [results.md](results.md) |
+| 6 Demo world and attack lab | Done: 4 real A2A agents, 5 MCP tool servers, an effects ledger, 31 attacks and 11 pieces of normal work. With Gjallarhorn: 0/31 attacks cause harm (12/31 without), 11/11 normal work done, 0 false blocks. See [results.md](results.md) |
 | 7 AI co-pilot | Done: incident rebuilt from the flight recorder; grounded explainer with an optional model narrative through Bifrost; rule suggester whose rules are validated, replayed and ranked proven/review/rejected; apply re-proves and needs the policy ETag. Fire drill in real Bifrost: gap closed by a proven rule, 6/9 unsafe or malformed suggestions rejected automatically, 7/7 normal work. See [copilot.md](copilot.md) |
 | 8 Console | Built and verified against the real demo stack: live 3D airspace (flights, interceptions, lockdown shields, air corridors), table, incident panel with the co-pilot (explain, suggest, apply), node panel with lock and unlock, policy editor with live replay and If-Match saves, replay timeline, demo traffic panel, first-run tour. Keyboard, screen-reader and reduced-motion support. 22 console tests. **Still to do:** the test with 3–5 people who have never seen it ([script](usability-test.md)). See [console.md](console.md) |
 | 9–10 | Not started |

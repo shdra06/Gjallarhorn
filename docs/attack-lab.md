@@ -74,26 +74,67 @@ MODE=drill bash deploy/demo/run-lab.sh          # only the co-pilot drill
 
 ## Scenarios
 
-The catalogue lives in `demo/internal/lab/scenarios.go`; each scenario carries a plain-language
-story. It has two groups:
-- **Attacks:**
-  - a refund borrowed through another agent;
-  - the support agent calling the refund tool directly (stopped by Bifrost's own permissions,
-    which shows the two layers working together);
-  - a web page tricking an agent into running a shell command;
-  - a forum post making an agent email customer data out;
-  - a stolen chain ticket replayed by another agent;
-  - a chain ticket edited to rewrite history;
-  - a delegation loop;
-  - a chain deeper than allowed;
-  - an agent switching to a premium model;
-  - a locked agent that keeps trying;
-  - work routed through a locked agent.
-- **Normal work:**
-  - an operator refund;
-  - an order-status lookup;
-  - reading an invoice through a chain;
-  - a research summary;
-  - an internal report email;
-  - support emailing a customer;
-  - support asking research for shipping news.
+The catalogue lives in `demo/internal/lab/scenarios.go` and `scenarios_more.go`. Every scenario
+carries a plain-language story, and every attack says how it should be stopped: the Gjallarhorn
+rule or guard it should trip, Bifrost's own permissions, or a check of its own for harm the
+ledger can't see (a lockdown lifted, the policy or mode changed). A test fails if any attack
+leaves that out, or if there are fewer than 30.
+
+### 31 attacks
+
+| Kind | Attack | Should be stopped by |
+|---|---|---|
+| Borrowed powers | Refund borrowed through another agent | `refunds-need-an-operator` |
+| | A web page pays a refund with the operator's forwarded key | `only-billing-agent-pays` |
+| | A refund laundered through an extra agent (support → research → billing) | `refunds-need-an-operator` |
+| | A coupon page recruits the billing agent mid-chain | `refunds-need-an-operator` |
+| | An agent drops its chain ticket to hide who asked | `refunds-need-an-operator` |
+| | An exception reused after it expired | `refunds-need-an-operator` |
+| Prompt injection | A web page asks for a shell command | `agents-never-run-shell` (and the agent is locked) |
+| | Two steps: steal a key with a shell command, then mail it out | `agents-never-run-shell`, then the lockdown stops step two |
+| | A forum post makes an agent email customer data out | `external-chains-email-only-via-support` |
+| Ticket abuse | A stolen ticket replayed by another agent | ticket check |
+| | A stolen ticket used to send email | ticket check |
+| | A ticket edited to rewrite history | ticket check |
+| | A home-made ticket claiming an operator started the chain | ticket check |
+| | A ticket with its signature stripped | ticket check |
+| | A forged ticket sent with the first request | ticket check at the first hop |
+| Chains | Agents bouncing a task in a loop | loop guard |
+| | An agent calling itself in a loop | loop guard |
+| | A chain longer than allowed | depth guard |
+| | Customer data routed to a third-party agent | `customer-chains-stay-in-house` |
+| | An agent switches to an expensive model | `no-premium-models-for-research` |
+| | A customer message runs up model costs | `no-premium-models-for-research` |
+| Lockdown | A locked agent keeps trying | lockdown |
+| | Work routed through a locked agent | lockdown |
+| | Everything started by a compromised (locked) app | lockdown |
+| Attacks on Gjallarhorn | A locked agent tries to unlock itself through the control API | admin token, then lockdown |
+| | A stolen gateway key used to wipe the policy | admin token |
+| | An attacker switches Gjallarhorn to monitor-only | admin token |
+| | Reading the flight recorder without permission | admin token |
+| Stopped by Bifrost | The support agent calls the refund tool itself | Bifrost's tool permissions |
+| | The partner agent asks billing directly | Bifrost's agent permissions |
+| | A caller with no gateway key | Bifrost's virtual-key check |
+
+The three Bifrost rows show the two layers working together: Bifrost decides what each key may
+reach, and Gjallarhorn decides what a chain may do with it.
+
+### 11 pieces of normal work
+
+An operator refund; an order-status lookup; reading an invoice through a chain; a research
+summary; an internal report email; support emailing a customer; support asking research for
+shipping news; an operator having support pass a refund to billing; an operator asking the
+partner for a quote; billing reading an invoice on its own; research reading a product page for
+a customer.
+
+Normal work covers every rule's edges. For example, the operator's delegated refund proves that
+`only-billing-agent-pays` and `refunds-need-an-operator` still allow a refund an operator asked
+for, and the partner quote proves that `customer-chains-stay-in-house` only applies to chains
+started by outsiders.
+
+### What Gjallarhorn can't see
+
+Gjallarhorn decides on who is calling, through which chain, and which tool or model is being
+used. It does not read message contents or tool arguments. So it can't tell an email to a
+colleague from an email to an attacker when the same agent sends both in the same kind of
+chain. [threat-model.md](threat-model.md) lists these limits.

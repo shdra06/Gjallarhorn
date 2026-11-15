@@ -9,8 +9,9 @@
 **Status:** under active development. See [docs/PLAN.md](docs/PLAN.md) for the full plan.
 
 **Result so far** ([details](docs/results.md)): in a real Bifrost with real agents and tools,
-**4 of 11 attacks cause real harm without Gjallarhorn, and 0 of 11 with it**. All 7 pieces of normal
-work still get done, with **zero false blocks**.
+**12 of 31 attacks cause real harm without Gjallarhorn, and 0 of 31 with it**. All 11 pieces of
+normal work still get done, with **zero false blocks**. The engine's test coverage is 95%, with at
+least 90% in every package.
 
 In the co-pilot fire drill, we removed a rule and let an attack through. The AI co-pilot explained
 what happened and suggested 9 rules. Replaying real traffic proved 3 of them safe and **rejected 6
