@@ -138,8 +138,7 @@ The idea, the design and the direction of Gjallarhorn are our own:
 
 **Claude Code** (by Anthropic) was our coding assistant. It worked from our instructions: it wrote
 code, tests and draft documentation, ran the builds and tests we asked for, and reported the
-results back to us. It did not choose what Gjallarhorn is or how it should protect agents; those
-decisions were ours.
+results back to us.
 
 ## Documentation
 
