@@ -1,17 +1,22 @@
 # Results
 
-Every number on this page comes from a file in `results/`. Re-create it with:
+Every number on this page comes from a file in `results/`. Re-create them with:
 
 ```bash
 podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
 podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
-bash deploy/demo/run-lab.sh
+bash deploy/demo/run-lab.sh        # attack lab and co-pilot drill
+bash deploy/demo/run-measure.sh    # lockdown speed and per-call cost
+bash deploy/demo/run-failtest.sh   # what happens when Gjallarhorn fails to start
 ```
 
-## Attack lab, 15 Nov 2026 (`results/attacklab-20261115T045737Z.json`)
+All of the following were measured on one laptop (Intel Core Ultra 9 185H, Windows 11, Podman on
+WSL2), from images built from commit `6878906`.
+
+## Attack lab, 15 Nov 2026 (`results/attacklab-20261115T055939Z.json`)
 
 - **Setup:** real Bifrost `transports/v2.5.1` with the Gjallarhorn plugin; four real A2A agents; five
-  real MCP tool servers; a mock model. Both images were built from commit `9daa07b`.
+  real MCP tool servers; a mock model.
 - **Scenarios:** 31 attacks and 11 pieces of normal work ([catalogue](attack-lab.md#scenarios)),
   each run twice: monitor-only (Gjallarhorn records but doesn't block, the same as running
   without it), then enforcing.
@@ -30,9 +35,11 @@ bash deploy/demo/run-lab.sh
 "Stopped by Gjallarhorn" includes three attacks on Gjallarhorn's own control API (policy wipe,
 switch to monitor-only, flight-recorder snooping). The admin token stops those, in both modes.
 
-Earlier, smaller runs are kept for the record: 11 attacks and 7 pieces of normal work in
-`results/attacklab-20261114T190157Z.json` and `results/attacklab-20261114T194111Z.json` (4/11
-harmful without Gjallarhorn, 0/11 with it).
+The same 31-attack catalogue gave identical results in two earlier runs
+(`results/attacklab-20261115T045737Z.json`, `results/attacklab-20261115T054707Z.json`). Older,
+smaller runs (11 attacks and 7 pieces of normal work, 4/11 harmful without Gjallarhorn and 0/11
+with it) are kept in `results/attacklab-20261114T190157Z.json` and
+`results/attacklab-20261114T194111Z.json`.
 
 ### The harm without Gjallarhorn
 
@@ -115,6 +122,83 @@ through Bifrost with its own virtual key, and both of its calls appear in the fl
 
 **Verdict: PASS.** The gap was closed by a rule the replay proved safe. All 6 unsafe or malformed
 suggestions were rejected automatically.
+
+## Lockdown speed
+
+`results/measure-20261115T055411Z/lockdown.json`
+
+- **Method:** four workers keep sending model calls as the research agent. An operator locks
+  research through the control API, waits 150 ms, unlocks, and repeats this 40 times.
+- **What was measured:**
+  - the time from sending the lock request to the first refused response;
+  - whether any call that started after the lock request returned was still allowed.
+
+| | Result |
+|---|---:|
+| Lockdowns | 40 |
+| Calls made during them | 21,745 |
+| First refused response after the lock request (median) | **1.8 ms** |
+| … p90 / p99 / worst | 4.8 ms / 10.9 ms / 18.8 ms |
+| Calls started after the lock returned that were still allowed | **0** |
+
+These numbers include the lock request's own round trip and saving the lockdown to disk. The
+lockdown applies in memory before the file is written.
+
+Before a fix found by this measurement, saving the lockdown paused every call through the
+gateway, for up to 250 ms on this laptop (see [security-review.md](security-review.md), S1).
+`results/measure-20261115T051222Z/lockdown.json` is the first run after the fix.
+
+## What Gjallarhorn costs per call
+
+`results/measure-20261115T055411Z/` holds every raw sample: three rounds alternating plugin off and plugin on, each in a
+fresh container, with 2,000 calls per plane after a 300-call warm-up.
+
+### Inside the gateway
+
+Gjallarhorn times its own decisions on the request path (resolving identity and the chain,
+deciding, queueing the flight-recorder event) and reports them on `/v1/stats`. These are the
+last 4,096 decisions of each plugin-on round, model and tool calls together:
+
+| Round | Median | p90 | p99 |
+|---|---:|---:|---:|
+| 1 | 56 µs | 116 µs | 253 µs |
+| 2 | 47 µs | 88 µs | 199 µs |
+| 3 | 45 µs | 88 µs | 212 µs |
+
+In an isolated Go benchmark on the same laptop, the same decision takes about 5 µs
+([benchmarks.md](benchmarks.md)). The difference comes from sharing the VM's CPUs with Bifrost,
+the agents and the load generator. The worst single decisions (4–13 ms) were the goroutine
+waiting to be scheduled, not work being done.
+
+### End to end
+
+Median latency of a direct call through Bifrost, plugin off → plugin on, pooled over the three
+rounds:
+
+| Call | Plugin off | Plugin on | Difference |
+|---|---:|---:|---:|
+| Model call | 2,575 µs | 2,782 µs | +207 µs |
+| Tool call (MCP) | 4,766 µs | 4,375 µs | −391 µs |
+
+Per round, the model-call difference ranged from +49 µs to +702 µs, and the tool-call
+difference from −618 µs to −165 µs. In other words, on this machine Gjallarhorn's cost is
+smaller than the noise between two container starts: a tool call even came out faster with the
+plugin. An honest end-to-end number needs a quiet, dedicated machine. Until then, the in-gateway
+timing above is the figure to quote.
+
+## When Gjallarhorn fails to start
+
+`results/startup-failure-20261115T060217Z.txt`
+
+The demo is started with a signing key that is too short, so the plugin's `Init` fails.
+
+| | What happened |
+|---|---|
+| Bifrost on its own | It logs `failed to load plugin gjallarhorn` and keeps serving traffic. A premium-model call that Gjallarhorn would refuse returned **200** |
+| With `deploy/guard.sh` (now in every image) | The container stopped with **exit code 1** after 31 s: `Gjallarhorn did not start within 30s … stopping Bifrost so traffic is not served unchecked` |
+
+See [security-review.md](security-review.md#plugin-start-up-failure) and the upstream proposal in
+[upstream.md](upstream.md).
 
 ## Phase 1 question 4, now answered
 

@@ -1,0 +1,14 @@
+# Gjallarhorn start-up failure test, 2026-11-15T06:02Z, commit 6878906
+# The plugin's Init fails because GJ_TICKET_KEY is shorter than 32 bytes.
+
+## 1. Without the guard (GJ_REQUIRE_PLUGIN=0): what Bifrost does on its own
+{"level":"error","time":"2026-11-15T06:02:38Z","message":"failed to load plugin gjallarhorn: failed to load custom plugin: plugin Init failed: gjallarhorn: tickets: key \"demo-1\": must be at least 32 bytes, got 9"}
+gateway /health: HTTP 200
+model call, no Gjallarhorn check: HTTP 200
+(research may not use premium models; with Gjallarhorn running this call is refused with 403)
+container: running
+
+## 2. With the guard (default): the container stops instead
+container exited with code 1 after 31s
+{"level":"error","time":"2026-11-15T06:03:05Z","message":"failed to load plugin gjallarhorn: failed to load custom plugin: plugin Init failed: gjallarhorn: tickets: key \"demo-1\": must be at least 32 bytes, got 9"}
+gjallarhorn-guard: Gjallarhorn did not start within 30s (check the log above for 'failed to load plugin'); stopping Bifrost so traffic is not served unchecked

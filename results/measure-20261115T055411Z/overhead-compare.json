@@ -1,0 +1,67 @@
+{
+  "kind": "overhead-comparison",
+  "baseline": [
+    "overhead-off-1.json",
+    "overhead-off-2.json",
+    "overhead-off-3.json"
+  ],
+  "compared": [
+    "overhead-on-1.json",
+    "overhead-on-2.json",
+    "overhead-on-3.json"
+  ],
+  "rounds": {
+    "llm": [
+      {
+        "p50_off_us": 2811.495,
+        "p50_on_us": 3513.282
+      },
+      {
+        "p50_off_us": 2495.881,
+        "p50_on_us": 2544.86
+      },
+      {
+        "p50_off_us": 2425.949,
+        "p50_on_us": 2498.118
+      }
+    ],
+    "mcp": [
+      {
+        "p50_off_us": 5619.438,
+        "p50_on_us": 5001.056
+      },
+      {
+        "p50_off_us": 4386.255,
+        "p50_on_us": 4221.267
+      },
+      {
+        "p50_off_us": 4118.32,
+        "p50_on_us": 3856.079
+      }
+    ]
+  },
+  "planes": {
+    "llm": {
+      "mean_added_us": 338.9731180000058,
+      "mean_off_us": 2981.5922764999923,
+      "mean_on_us": 3320.565394499998,
+      "p50_added_us": 206.59900000000016,
+      "p50_off_us": 2574.91,
+      "p50_on_us": 2781.509,
+      "p90_added_us": 633.6180000000004,
+      "p90_off_us": 4386.396,
+      "p90_on_us": 5020.014
+    },
+    "mcp": {
+      "mean_added_us": -198.70941949998632,
+      "mean_off_us": 5183.299960833329,
+      "mean_on_us": 4984.590541333343,
+      "p50_added_us": -390.9229999999998,
+      "p50_off_us": 4766.152,
+      "p50_on_us": 4375.229,
+      "p90_added_us": 340.9249999999993,
+      "p90_off_us": 7602.363,
+      "p90_on_us": 7943.288
+    }
+  }
+}

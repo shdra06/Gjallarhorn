@@ -22,6 +22,11 @@ panel:
 
 Stop the demo with `bash deploy/demo/run-console.sh stop`.
 
+**Known issue:** Bifrost downloads model pricing data from the internet when it starts. If that
+download times out, Bifrost exits with `failed to initialize pricing manager`. This happened
+once in our measurement runs. Run the script again, and check that the machine can reach the
+internet.
+
 To work on the console itself, keep the demo running and start the dev server. It proxies `/v1`
 and `/demo` to the demo stack, so the browser still sees one origin:
 

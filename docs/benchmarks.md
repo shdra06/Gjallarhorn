@@ -53,3 +53,14 @@ A CPU profile of `BenchmarkCheckDelegatedLatency` shows:
 
 Next targets: avoid the second SHA-256 for the key fingerprint, reuse principal copies, and use a
 faster encoder for the hash input.
+
+## 2026-11-15: in the real gateway
+
+Benchmarks measure the engine alone. Since Phase 9, the engine also times every decision it
+makes inside the running gateway and reports it on `/v1/stats` (`decision_latency`). In the demo
+stack (Podman on WSL2, one laptop, the CPU shared with Bifrost, the agents and the load
+generator), the median was **45–56 µs** and p99 **200–250 µs** over three rounds of 4,096
+decisions each. End to end, the difference with the plugin on and off was smaller than the noise
+between container starts.
+
+Details and raw samples: [results.md](results.md#what-gjallarhorn-costs-per-call), `results/measure-20261115T055411Z/`.

@@ -173,9 +173,14 @@ its own origin, with a strict Content-Security-Policy:
 
 ## Measured performance
 
-See [benchmarks.md](benchmarks.md):
-- Policy evaluation: about 0.4 µs.
-- Lockdown check: about 30 ns.
-- Chain-ticket check: about 0.15 µs (cached).
-- A full decision for a delegated call, as a request sees it: about 5 µs. The flight recorder seals
-  events in the background.
+From [benchmarks.md](benchmarks.md) (the engine alone):
+- policy evaluation: about 0.4 µs;
+- lockdown check: about 30 ns;
+- chain-ticket check: about 0.15 µs (cached);
+- a full decision for a delegated call, as a request sees it: about 5 µs. The flight recorder
+  seals events in the background.
+
+From [results.md](results.md), in the real gateway on a laptop VM:
+- decisions take a median of 45–56 µs;
+- a lockdown refuses the next call a median of 1.8 ms after the lock request, with no call let
+  through after it.

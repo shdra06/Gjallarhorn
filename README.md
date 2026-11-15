@@ -8,15 +8,22 @@
 
 **Status:** under active development. See [docs/PLAN.md](docs/PLAN.md) for the full plan.
 
-**Result so far** ([details](docs/results.md)): in a real Bifrost with real agents and tools,
-**12 of 31 attacks cause real harm without Gjallarhorn, and 0 of 31 with it**. All 11 pieces of
-normal work still get done, with **zero false blocks**. The engine's test coverage is 95%, with at
-least 90% in every package.
+**Results so far.** Every claim links to the raw file it comes from (more in
+[results.md](docs/results.md)).
 
-In the co-pilot fire drill, we removed a rule and let an attack through. The AI co-pilot explained
-what happened and suggested 9 rules. Replaying real traffic proved 3 of them safe and **rejected 6
-on its own**: 5 would have blocked normal work, 1 was malformed. The proven rule stopped the attack,
-and normal work kept running ([how](docs/copilot.md)).
+| Claim | Raw result |
+|---|---|
+| In a real Bifrost with real agents and tools, **12 of 31 attacks cause real harm without Gjallarhorn, and 0 of 31 with it** | [`results/attacklab-20261115T055939Z.json`](results/attacklab-20261115T055939Z.json) |
+| All **11 pieces of normal work** still get done, with **zero false blocks** | [`results/attacklab-20261115T055939Z.json`](results/attacklab-20261115T055939Z.json) |
+| A lockdown refuses the agent's next call a **median of 1.8 ms** after the lock request. Across 40 lockdowns during 21,745 calls, **no call** that started after the lock got through | [`results/measure-20261115T055411Z/lockdown.json`](results/measure-20261115T055411Z/lockdown.json) |
+| Gjallarhorn's decision takes a **median of 45–56 µs inside the running gateway** (on a laptop VM; about 5 µs in an isolated benchmark). End to end, its cost was below the noise between container starts | [`results/measure-20261115T055411Z/`](results/measure-20261115T055411Z/), [benchmarks](docs/benchmarks.md) |
+| Co-pilot fire drill: with a rule removed, the AI co-pilot suggested 9 rules. Replaying real traffic proved 3 safe and **rejected 6 on its own** (5 would have blocked normal work, 1 was malformed). The proven rule stopped the attack and normal work kept running | [`results/attacklab-20261115T055939Z.json`](results/attacklab-20261115T055939Z.json) (`copilot_drill`) |
+| If Gjallarhorn fails to start, Bifrost serves traffic without it. Our images **stop the container instead** | [`results/startup-failure-20261115T060217Z.txt`](results/startup-failure-20261115T060217Z.txt) |
+| Engine test coverage **95.3%**, at least 90% in every package | [`results/coverage-20261115T053752Z.txt`](results/coverage-20261115T053752Z.txt) |
+| No known vulnerabilities in our Go code (Go 1.27.4) or the console's npm packages | [security review](docs/security-review.md) |
+
+What Gjallarhorn does **not** protect against is written down in the
+[threat model](docs/threat-model.md).
 
 ## Try it
 
@@ -33,8 +40,9 @@ chain, ask the AI co-pilot what happened, or lock the agent. See [docs/console.m
 | Done | Next |
 |---|---|
 | Core engine: identity, chain tickets, policy, lockdown, grants, flight recorder, replay | Usability test of the console with 3–5 people who have never seen it ([script](docs/usability-test.md)) |
-| Operator control API with a live event stream and an enforce/monitor switch | Published measurements, threat model, upstream PR |
+| Operator control API with a live event stream and an enforce/monitor switch | Open the upstream Bifrost issue ([draft](docs/upstream.md)) |
 | Bifrost plugin, running in real Bifrost v2.5.1 | Submission package |
+| Measurements, threat model and security review ([results](docs/results.md), [threat model](docs/threat-model.md), [review](docs/security-review.md)) | |
 | Demo world (4 A2A agents, 5 MCP tools) and an attack lab ([how it works](docs/attack-lab.md)) | |
 | AI co-pilot: incident explainer and a rule suggester proven by replay ([how it works](docs/copilot.md)) | |
 | Operator console: live 3D airspace, table, incidents, lockdowns, policy editor with live replay, replay timeline ([how it works](docs/console.md)) | |
@@ -73,8 +81,8 @@ them is tricked, today's gateways can't answer basic questions:
 | `console/` | The operator console (React, Three.js, TypeScript), served by the control API |
 | `demo/` | The demo company (A2A agents, MCP tools, effects ledger, mock model), the attack lab and the co-pilot fire drill |
 | `deploy/` | Container builds: Bifrost with the plugin, the full demo, a dev image with integration tests, the Phase 1 spike |
-| `results/` | Raw attack-lab reports behind every number we publish |
-| `docs/` | Plan, architecture, console, co-pilot, attack lab, results, benchmarks, usability test, spike results |
+| `results/` | Raw reports behind every number we publish: attack lab, measurements, coverage, start-up failure |
+| `docs/` | Plan, architecture, console, co-pilot, attack lab, results, benchmarks, threat model, security review, upstream proposals, usability test, spike results |
 
 ## Developing
 

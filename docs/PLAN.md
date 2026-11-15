@@ -193,6 +193,8 @@ Full details: `docs/ARCHITECTURE.md`.
 - Demo video under 3 minutes, with a human voice and the wow in the first 30 seconds.
 - An always-on live demo.
 - The organizer confirmation about the dynamic build, noted in setup.
+- Make the demo start without internet access. Bifrost downloads pricing data at start-up and
+  exits if that times out; it happened once in Phase 9.
 - **Done when:** a stranger can clone the repo, run one command and see the demo.
 
 ## 7. The demo story (target: 3 minutes)
@@ -213,7 +215,7 @@ Full details: `docs/ARCHITECTURE.md`.
 - Small commits with clear messages. No secrets in the repo.
 - Privacy: no prompt content stored by default.
 
-## 9. Progress (14 Nov 2026)
+## 9. Progress (15 Nov 2026)
 
 | Phase | State |
 |---|---|
@@ -226,7 +228,8 @@ Full details: `docs/ARCHITECTURE.md`.
 | 6 Demo world and attack lab | Done: 4 real A2A agents, 5 MCP tool servers, an effects ledger, 31 attacks and 11 pieces of normal work. With Gjallarhorn: 0/31 attacks cause harm (12/31 without), 11/11 normal work done, 0 false blocks. See [results.md](results.md) |
 | 7 AI co-pilot | Done: incident rebuilt from the flight recorder; grounded explainer with an optional model narrative through Bifrost; rule suggester whose rules are validated, replayed and ranked proven/review/rejected; apply re-proves and needs the policy ETag. Fire drill in real Bifrost: gap closed by a proven rule, 6/9 unsafe or malformed suggestions rejected automatically, 7/7 normal work. See [copilot.md](copilot.md) |
 | 8 Console | Built and verified against the real demo stack: live 3D airspace (flights, interceptions, lockdown shields, air corridors), table, incident panel with the co-pilot (explain, suggest, apply), node panel with lock and unlock, policy editor with live replay and If-Match saves, replay timeline, demo traffic panel, first-run tour. Keyboard, screen-reader and reduced-motion support. 22 console tests. **Still to do:** the test with 3–5 people who have never seen it ([script](usability-test.md)). See [console.md](console.md) |
-| 9–10 | Not started |
+| 9 Proof, hardening, upstream | Done except posting upstream: 31-attack lab, lockdown speed, in-gateway decision cost and the plugin-off/on comparison measured with raw files ([results.md](results.md)); [threat model](threat-model.md) and [security review](security-review.md), with fixes (lockdowns no longer stall the gateway, Go 1.27.4, fail-closed guard, quiet denials, bounded replays). Every README claim links to a raw result. **Still to do:** post the upstream Bifrost issue ([draft](upstream.md)), with the owner's approval |
+| 10 | Not started |
 
 ## 10. Open items
 - [x] Set the Go module path to the real repository: `github.com/shdra06/Gjallarhorn`.

@@ -1,0 +1,16 @@
+# Engine test coverage at commit 0eb75c0 (2026-11-15T05:37Z)
+# Command: cd engine && go test -count=1 -race -coverprofile=coverage.out ./... && go tool cover -func=coverage.out | tail -1
+# Go: go version go1.26.1 windows/amd64
+ok    github.com/shdra06/Gjallarhorn/engine  5.993s  coverage: 95.6% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/control  7.407s  coverage: 93.0% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/copilot  6.351s  coverage: 97.5% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/gateway  7.143s  coverage: 98.5% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/identity  2.913s  coverage: 98.1% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/incident  6.980s  coverage: 97.0% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/lockdown  3.128s  coverage: 92.5% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/policy  2.821s  coverage: 97.9% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/recorder  6.427s  coverage: 94.4% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/replay  6.588s  coverage: 91.9% of statements
+ok    github.com/shdra06/Gjallarhorn/engine/ticket  2.924s  coverage: 92.5% of statements
+
+total: (statements) 95.3%
