@@ -55,6 +55,9 @@ func Init(config any) error {
 	if err != nil {
 		return fmt.Errorf("gjallarhorn: %w", err)
 	}
+	if c.AcceptLabels {
+		fmt.Fprintln(os.Stderr, "gjallarhorn: WARNING accept_labels is on: any caller can label its own traffic as attack or benign, which feeds replay verdicts and co-pilot proofs. Use it in test environments only.")
+	}
 	// monitor_only in the config sets the starting mode; operators can switch it at runtime
 	// through the control API (PUT /v1/mode).
 	e.SetEnforcing(!c.MonitorOnly, "config")
@@ -155,7 +158,8 @@ func labelOf(c gateway.Config, h map[string]string) string {
 	return h[gateway.LabelHeader]
 }
 
-func forbidden(d policy.Decision) *schemas.BifrostError {
+func forbidden(res engine.Result, quiet bool) *schemas.BifrostError {
+	d := res.Decision
 	status := http.StatusForbidden
 	noFallback := false
 	code := "gjallarhorn_" + d.Code
@@ -165,7 +169,7 @@ func forbidden(d policy.Decision) *schemas.BifrostError {
 		StatusCode:     &status,
 		Type:           &typ,
 		AllowFallbacks: &noFallback,
-		Error:          &schemas.ErrorField{Message: gateway.DenyMessage(d), Code: &code, Type: &typ},
+		Error:          &schemas.ErrorField{Message: gateway.DenyMessageFor(d, res.Seq, quiet), Code: &code, Type: &typ},
 	}
 }
 
@@ -197,7 +201,7 @@ func HTTPTransportPreHook(ctx *schemas.BifrostContext, req *schemas.HTTPRequest)
 		return &schemas.HTTPResponse{
 			StatusCode: http.StatusForbidden,
 			Headers:    map[string]string{"Content-Type": "application/json"},
-			Body:       gateway.DenyBody(res.Decision, res.Seq),
+			Body:       gateway.DenyBodyFor(res.Decision, res.Seq, c.QuietDenials),
 		}, nil
 	}
 	if req.Headers == nil {
@@ -232,7 +236,7 @@ func PreA2AHook(ctx *schemas.BifrostContext, req *schemas.BifrostA2ARequest) (*s
 	res := e.Check(engine.Request{ID: requestIDOf(ctx), Plane: policy.PlaneA2A, Target: req.AgentName,
 		VirtualKey: credentialOf(ctx, h), Ticket: h[e.TicketHeader()], Label: labelOf(c, h)})
 	if res.Block() {
-		return req, &schemas.A2APluginShortCircuit{Error: forbidden(res.Decision)}, nil
+		return req, &schemas.A2APluginShortCircuit{Error: forbidden(res, c.QuietDenials)}, nil
 	}
 	ctx.SetValue(ctxStart, time.Now())
 	return req, nil, nil
@@ -258,7 +262,7 @@ func PreLLMHook(ctx *schemas.BifrostContext, req *schemas.BifrostRequest) (*sche
 	res := e.Check(engine.Request{ID: id, Plane: policy.PlaneLLM, Target: gateway.LLMTarget(string(provider), model),
 		VirtualKey: credentialOf(ctx, h), Ticket: h[e.TicketHeader()], Label: labelOf(c, h)})
 	if res.Block() {
-		return req, &schemas.LLMPluginShortCircuit{Error: forbidden(res.Decision)}, nil
+		return req, &schemas.LLMPluginShortCircuit{Error: forbidden(res, c.QuietDenials)}, nil
 	}
 	ctx.SetValue(ctxReqID, id)
 	ctx.SetValue(ctxStart, time.Now())
@@ -284,7 +288,7 @@ func PreMCPHook(ctx *schemas.BifrostContext, req *schemas.BifrostMCPRequest) (*s
 	res := e.Check(engine.Request{ID: id, Plane: policy.PlaneMCP, Target: target,
 		VirtualKey: credentialOf(ctx, h), Ticket: h[e.TicketHeader()], Label: labelOf(c, h)})
 	if res.Block() {
-		return req, &schemas.MCPPluginShortCircuit{Error: forbidden(res.Decision)}, nil
+		return req, &schemas.MCPPluginShortCircuit{Error: forbidden(res, c.QuietDenials)}, nil
 	}
 	ctx.SetValue(ctxReqID, id)
 	ctx.SetValue(ctxStart, time.Now())

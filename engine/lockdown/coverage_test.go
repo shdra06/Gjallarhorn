@@ -131,3 +131,49 @@ func TestUnreadableFileIsAnError(t *testing.T) {
 		t.Fatal("load")
 	}
 }
+
+// A lockdown must take effect at once, and writing it to disk must never pause anyone else's
+// calls. Before this was fixed, the file was written while holding the lock IsLocked reads, so
+// a slow disk (up to 250 ms in the demo stack) stalled every call through the gateway.
+func TestSlowDiskDoesNotStallTheHotPath(t *testing.T) {
+	r, err := New(WithFile(filepath.Join(t.TempDir(), "lockdowns.json")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.saveMu.Lock() // the disk is busy
+	done := make(chan error, 1)
+	go func() {
+		_, err := r.Lock(Entry{Principal: "agent:research"})
+		done <- err
+	}()
+	deadline := time.Now().Add(2 * time.Second)
+	for !r.IsLocked("agent:research", time.Now()) {
+		if time.Now().After(deadline) {
+			t.Fatal("the lockdown must apply before the file is written")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	checked := make(chan bool, 1)
+	go func() { checked <- r.IsLocked("agent:support", time.Now()) }()
+	select {
+	case locked := <-checked:
+		if locked {
+			t.Fatal("only research is locked")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("other agents' calls waited for the disk")
+	}
+	select {
+	case <-done:
+		t.Fatal("Lock returned before the lockdown was saved")
+	default:
+	}
+	r.saveMu.Unlock()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	again, _ := New(WithFile(r.path))
+	if !again.IsLocked("agent:research", time.Now()) {
+		t.Fatal("the lockdown was saved")
+	}
+}

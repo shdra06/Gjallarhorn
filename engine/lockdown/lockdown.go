@@ -38,9 +38,13 @@ func (e Entry) Active(now time.Time) bool {
 }
 
 // Registry is the set of current lockdowns. It is safe for concurrent use.
+//
+// mu guards the map and is held only for map access, never while writing the file, so the hot
+// path (IsLocked) never waits on a disk. saveMu puts file writes in order.
 type Registry struct {
 	mu      sync.RWMutex
 	entries map[string]Entry
+	saveMu  sync.Mutex
 	path    string
 	now     func() time.Time
 }
@@ -86,6 +90,10 @@ func (r *Registry) Get(principal string) (Entry, bool) {
 }
 
 // Lock adds or replaces a lockdown. It returns the stored entry.
+//
+// The lockdown takes effect in memory first, so the principal's very next call is refused,
+// and is then written to disk. Calls by everyone else never wait for the write. If the write
+// fails, the change is undone and the error returned, so memory and disk agree.
 func (r *Registry) Lock(e Entry) (Entry, error) {
 	if e.Principal == "" {
 		return Entry{}, errors.New("lockdown needs a principal")
@@ -99,33 +107,39 @@ func (r *Registry) Lock(e Entry) (Entry, error) {
 	r.mu.Lock()
 	prev, had := r.entries[e.Principal]
 	r.entries[e.Principal] = e
-	err := r.saveLocked()
-	if err != nil {
-		// Keep memory and disk consistent: undo the change.
-		if had {
-			r.entries[e.Principal] = prev
-		} else {
-			delete(r.entries, e.Principal)
-		}
-	}
 	r.mu.Unlock()
-	if err != nil {
+	if err := r.save(); err != nil {
+		r.mu.Lock()
+		if cur, ok := r.entries[e.Principal]; ok && cur == e {
+			if had {
+				r.entries[e.Principal] = prev
+			} else {
+				delete(r.entries, e.Principal)
+			}
+		}
+		r.mu.Unlock()
 		return Entry{}, err
 	}
 	return e, nil
 }
 
-// Unlock lifts a lockdown. It returns the removed entry and whether there was one.
+// Unlock lifts a lockdown. It returns the removed entry and whether there was one. If the
+// file can't be written, the lockdown stays: failing closed is safer than failing open.
 func (r *Registry) Unlock(principal string) (Entry, bool, error) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	e, ok := r.entries[principal]
 	if !ok {
+		r.mu.Unlock()
 		return Entry{}, false, nil
 	}
 	delete(r.entries, principal)
-	if err := r.saveLocked(); err != nil {
-		r.entries[principal] = e
+	r.mu.Unlock()
+	if err := r.save(); err != nil {
+		r.mu.Lock()
+		if _, again := r.entries[principal]; !again {
+			r.entries[principal] = e
+		}
+		r.mu.Unlock()
 		return Entry{}, false, err
 	}
 	return e, true, nil
@@ -196,15 +210,21 @@ func (r *Registry) load() error {
 	return nil
 }
 
-// saveLocked writes the file atomically. Callers hold r.mu.
-func (r *Registry) saveLocked() error {
+// save writes the current lockdowns to the file atomically. Writes are serialised and each
+// takes a fresh snapshot, so whichever write runs last records the latest state. It never
+// holds r.mu while touching the disk.
+func (r *Registry) save() error {
 	if r.path == "" {
 		return nil
 	}
+	r.saveMu.Lock()
+	defer r.saveMu.Unlock()
+	r.mu.RLock()
 	ff := fileFormat{Version: 1, Lockdowns: make([]Entry, 0, len(r.entries))}
 	for _, e := range r.entries {
 		ff.Lockdowns = append(ff.Lockdowns, e)
 	}
+	r.mu.RUnlock()
 	sort.Slice(ff.Lockdowns, func(i, j int) bool { return ff.Lockdowns[i].Principal < ff.Lockdowns[j].Principal })
 	data, err := json.MarshalIndent(ff, "", "  ")
 	if err != nil {

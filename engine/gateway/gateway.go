@@ -37,6 +37,10 @@ type Config struct {
 	AcceptLabels bool `json:"accept_labels,omitempty"`
 	// MonitorOnly records every decision but never blocks. Useful for a first rollout.
 	MonitorOnly bool `json:"monitor_only,omitempty"`
+	// QuietDenials leaves the rule and its reason out of what a blocked caller is told; the
+	// caller sees only the kind of denial and the flight-recorder reference. Turn it on when
+	// callers are untrusted, so they can't use denials to map the policy.
+	QuietDenials bool `json:"quiet_denials,omitempty"`
 	// Copilot configures the model the AI co-pilot uses. Point it at this Bifrost with a
 	// virtual key of its own, so the co-pilot's model calls are governed and recorded too.
 	// Leave it out to run the co-pilot without a model.
@@ -164,18 +168,26 @@ func MCPTarget(client, toolName, requestType string) string {
 
 // DenyBody is the JSON returned to a caller whose call was blocked. It explains what
 // happened without leaking policy internals beyond the rule ID and reason.
-func DenyBody(d policy.Decision, seq uint64) []byte {
-	b, _ := json.Marshal(map[string]any{
-		"error": map[string]any{
-			"type":    "gjallarhorn_denied",
-			"code":    d.Code,
-			"rule_id": d.RuleID,
-			"message": "Blocked by Gjallarhorn: " + d.Reason,
-			"event":   seq,
-		},
-	})
+func DenyBody(d policy.Decision, seq uint64) []byte { return DenyBodyFor(d, seq, false) }
+
+// DenyBodyFor is DenyBody, optionally without the rule and its reason.
+func DenyBodyFor(d policy.Decision, seq uint64, quiet bool) []byte {
+	e := map[string]any{"type": "gjallarhorn_denied", "code": d.Code, "message": DenyMessageFor(d, seq, quiet), "event": seq}
+	if !quiet {
+		e["rule_id"] = d.RuleID
+	}
+	b, _ := json.Marshal(map[string]any{"error": e})
 	return b
 }
 
 // DenyMessage is the short message used inside gateway error envelopes.
-func DenyMessage(d policy.Decision) string { return "Blocked by Gjallarhorn: " + d.Reason }
+func DenyMessage(d policy.Decision) string { return DenyMessageFor(d, 0, false) }
+
+// DenyMessageFor is DenyMessage, optionally without the reason (quiet), in which case the
+// flight-recorder reference lets an operator find the full decision.
+func DenyMessageFor(d policy.Decision, seq uint64, quiet bool) string {
+	if quiet {
+		return fmt.Sprintf("Blocked by Gjallarhorn (%s). Reference: event %d", d.Code, seq)
+	}
+	return "Blocked by Gjallarhorn: " + d.Reason
+}

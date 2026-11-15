@@ -150,7 +150,7 @@ func TestCopilotSuggestAndApply(t *testing.T) {
 			}
 		}
 	}
-	resp, body = do(t, srv, "GET", "/v1/incidents", "")
+	_, body = do(t, srv, "GET", "/v1/incidents", "")
 	var notes []incident.Step
 	if json.Unmarshal(body, &notes) != nil || len(notes) != 1 || notes[0].Seq != again {
 		t.Fatalf("the blocked attack is now an incident: %s", body)

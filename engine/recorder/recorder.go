@@ -483,6 +483,25 @@ func Verify(rd io.Reader) (int, error) {
 	return n, err
 }
 
+// ReadTail verifies a whole log but returns only its last n events (all of them if n <= 0),
+// so memory stays bounded however long the log is.
+func ReadTail(rd io.Reader, n int) ([]Event, error) {
+	if n <= 0 {
+		return ReadAll(rd)
+	}
+	ring := make([]Event, 0, min(n, 4096))
+	start := 0
+	err := walk(rd, func(e Event) {
+		if len(ring) < n {
+			ring = append(ring, e)
+			return
+		}
+		ring[start] = e
+		start = (start + 1) % n
+	})
+	return append(ring[start:], ring[:start]...), err
+}
+
 // ReadAll verifies a log and returns all events.
 func ReadAll(rd io.Reader) ([]Event, error) {
 	var out []Event

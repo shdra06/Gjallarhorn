@@ -41,6 +41,9 @@ type RecorderConfig struct {
 	Path string `json:"path,omitempty"`
 	// RingSize is how many recent events are kept in memory for the live view (default 4096).
 	RingSize int `json:"ring_size,omitempty"`
+	// ReplayLimit is how many of the most recent events a replay, simulation or co-pilot proof
+	// reads from the log file (default 200000). The whole file is still verified.
+	ReplayLimit int `json:"replay_limit,omitempty"`
 }
 
 // Duration is a time.Duration that reads and writes strings like "10m".
@@ -78,6 +81,9 @@ func (c Config) withDefaults() Config {
 	c.Tickets.Header = strings.ToLower(c.Tickets.Header)
 	if c.Recorder.RingSize <= 0 {
 		c.Recorder.RingSize = 4096
+	}
+	if c.Recorder.ReplayLimit <= 0 {
+		c.Recorder.ReplayLimit = 200000
 	}
 	// Resolve env: references so secrets can live in the environment, not in config files.
 	if len(c.Tickets.Keys) > 0 {

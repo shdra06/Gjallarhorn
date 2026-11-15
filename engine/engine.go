@@ -83,6 +83,7 @@ type Engine struct {
 	grants    []policy.Grant
 	monitor   atomic.Bool // true = record decisions but never block
 	now       func() time.Time
+	lat       *latencyRing
 	closeOnce sync.Once
 }
 
@@ -94,7 +95,7 @@ func WithClock(now func() time.Time) Option { return func(e *Engine) { e.now = n
 
 // New builds an engine from configuration.
 func New(cfg Config, opts ...Option) (*Engine, error) {
-	e := &Engine{now: time.Now}
+	e := &Engine{now: time.Now, lat: newLatencyRing(4096)}
 	for _, o := range opts {
 		o(e)
 	}
@@ -243,8 +244,12 @@ func (e *Engine) principalFor(id string, kind identity.Kind) identity.Principal 
 	return identity.Principal{ID: id, Kind: kind}
 }
 
+// timeDecision records how long a decision took, in real time (never the test clock).
+func (e *Engine) timeDecision(start time.Time) { e.lat.add(time.Since(start)) }
+
 // Check decides a model or tool call (or an agent call when no ticket needs minting).
 func (e *Engine) Check(req Request) Result {
+	defer e.timeDecision(time.Now())
 	r := e.resolve(req)
 	return e.decide(req, r, nil)
 }
@@ -252,6 +257,7 @@ func (e *Engine) Check(req Request) Result {
 // Delegate decides an agent-to-agent call and, when it is allowed, mints the chain ticket to
 // forward to the agent being called.
 func (e *Engine) Delegate(req Request) Result {
+	defer e.timeDecision(time.Now())
 	req.Plane = policy.PlaneA2A
 	r := e.resolve(req)
 	return e.decide(req, r, func(res *Result) {
@@ -501,7 +507,9 @@ func (e *Engine) History() ([]recorder.Event, error) {
 		return nil, err
 	}
 	defer f.Close()
-	events, err := recorder.ReadAll(f)
+	// Verify the whole log, but keep only the most recent events, so a large log can't
+	// exhaust memory during a replay.
+	events, err := recorder.ReadTail(f, e.cfg.Recorder.ReplayLimit)
 	if err != nil {
 		return nil, err
 	}

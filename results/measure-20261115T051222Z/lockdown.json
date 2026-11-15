@@ -1,0 +1,307 @@
+{
+  "kind": "lockdown-latency",
+  "when": "2026-11-15T05:16:43.140935172Z",
+  "workers": 4,
+  "trials": [
+    {
+      "lock_api_us": 133961.139,
+      "first_blocked_us": 3258.47,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 6,
+      "calls": 568
+    },
+    {
+      "lock_api_us": 32442.27,
+      "first_blocked_us": 1044.497,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 692
+    },
+    {
+      "lock_api_us": 27067.445,
+      "first_blocked_us": 1182.723,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 699
+    },
+    {
+      "lock_api_us": 26977.85,
+      "first_blocked_us": 1800.189,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 606
+    },
+    {
+      "lock_api_us": 8822.727,
+      "first_blocked_us": 1974.743,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 655
+    },
+    {
+      "lock_api_us": 9226.645,
+      "first_blocked_us": 1691.54,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 663
+    },
+    {
+      "lock_api_us": 13343.782,
+      "first_blocked_us": 1060.126,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 585
+    },
+    {
+      "lock_api_us": 63891.76,
+      "first_blocked_us": 5942.069,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 7,
+      "calls": 431
+    },
+    {
+      "lock_api_us": 17056.789,
+      "first_blocked_us": 2330.641,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 578
+    },
+    {
+      "lock_api_us": 12873.768,
+      "first_blocked_us": 1306.353,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 570
+    },
+    {
+      "lock_api_us": 92292.89,
+      "first_blocked_us": 18299.916,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 523
+    },
+    {
+      "lock_api_us": 11064.78,
+      "first_blocked_us": 2375.714,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 578
+    },
+    {
+      "lock_api_us": 12170.102,
+      "first_blocked_us": 3806.754,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 451
+    },
+    {
+      "lock_api_us": 35174.083,
+      "first_blocked_us": 2239.781,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 415
+    },
+    {
+      "lock_api_us": 8938.548,
+      "first_blocked_us": 2312.412,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 457
+    },
+    {
+      "lock_api_us": 15601.2,
+      "first_blocked_us": 1750.497,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 611
+    },
+    {
+      "lock_api_us": 26170.879,
+      "first_blocked_us": 932.214,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 575
+    },
+    {
+      "lock_api_us": 18901.87,
+      "first_blocked_us": 1495.078,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 575
+    },
+    {
+      "lock_api_us": 28038.674,
+      "first_blocked_us": 16142.734,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 13,
+      "calls": 539
+    },
+    {
+      "lock_api_us": 9832.51,
+      "first_blocked_us": 1531.219,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 627
+    },
+    {
+      "lock_api_us": 13468.113,
+      "first_blocked_us": 1388.182,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 577
+    },
+    {
+      "lock_api_us": 11388.145,
+      "first_blocked_us": 1804.487,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 615
+    },
+    {
+      "lock_api_us": 24919.953,
+      "first_blocked_us": 1463.407,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 708
+    },
+    {
+      "lock_api_us": 13054.839,
+      "first_blocked_us": 1398.264,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 578
+    },
+    {
+      "lock_api_us": 12119.29,
+      "first_blocked_us": 1445.57,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 675
+    },
+    {
+      "lock_api_us": 5866.08,
+      "first_blocked_us": 1159.644,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 700
+    },
+    {
+      "lock_api_us": 5904.136,
+      "first_blocked_us": 2385.903,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 695
+    },
+    {
+      "lock_api_us": 7930.69,
+      "first_blocked_us": 2591.893,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 702
+    },
+    {
+      "lock_api_us": 30767.964,
+      "first_blocked_us": 11872.286,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 688
+    },
+    {
+      "lock_api_us": 8937.704,
+      "first_blocked_us": 1068.31,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 665
+    },
+    {
+      "lock_api_us": 19104.487,
+      "first_blocked_us": 742.264,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 715
+    },
+    {
+      "lock_api_us": 5539.809,
+      "first_blocked_us": 2754.068,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 748
+    },
+    {
+      "lock_api_us": 14088.331,
+      "first_blocked_us": 4582.847,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 699
+    },
+    {
+      "lock_api_us": 29542.126,
+      "first_blocked_us": 2771.751,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 600
+    },
+    {
+      "lock_api_us": 10113.075,
+      "first_blocked_us": 1043.116,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 3,
+      "calls": 717
+    },
+    {
+      "lock_api_us": 6271.806,
+      "first_blocked_us": 1377.167,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 729
+    },
+    {
+      "lock_api_us": 37999.882,
+      "first_blocked_us": 6074.433,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 8,
+      "calls": 513
+    },
+    {
+      "lock_api_us": 16162.355,
+      "first_blocked_us": 1756.312,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 623
+    },
+    {
+      "lock_api_us": 15314.884,
+      "first_blocked_us": 4027.443,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 4,
+      "calls": 667
+    },
+    {
+      "lock_api_us": 31055.133,
+      "first_blocked_us": 851.089,
+      "allowed_after_lock": 0,
+      "in_flight_allowed": 2,
+      "calls": 598
+    }
+  ],
+  "first_blocked": {
+    "n": 40,
+    "min_us": 742.264,
+    "p50_us": 1756.312,
+    "p90_us": 5942.069,
+    "p99_us": 16142.734,
+    "max_us": 18299.916,
+    "mean_us": 3125.90265
+  },
+  "lock_api": {
+    "n": 40,
+    "min_us": 5539.809,
+    "p50_us": 14088.331,
+    "p90_us": 35174.083,
+    "p99_us": 92292.89,
+    "max_us": 133961.139,
+    "mean_us": 23084.962825000002
+  },
+  "allowed_after_lock_total": 0,
+  "calls_total": 24610
+}

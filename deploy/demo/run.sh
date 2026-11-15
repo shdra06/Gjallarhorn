@@ -18,5 +18,11 @@ for port in 9000 9100 9201 9202 9203 9204 9300; do
     sleep 0.2
   done
 done
+if [ "${GJ_PLUGIN:-on}" = "off" ]; then
+  # Overhead measurements only: the same stack with the Gjallarhorn plugin switched off.
+  sed -i 's/^      "enabled": true,$/      "enabled": false,/' /app/data/config.json
+  grep -q '"enabled": false,' /app/data/config.json || { echo "could not switch the plugin off"; exit 1; }
+  echo "Gjallarhorn plugin is OFF (measurement mode)"
+fi
 echo "demo world ready; starting Bifrost"
 exec /app/bifrost-http -app-dir /app/data -port 8080 -host 0.0.0.0 -log-level info -log-style json

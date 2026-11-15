@@ -1,7 +1,9 @@
 package recorder
 
 import (
+	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -62,4 +64,31 @@ func (r *Recorder) waitAll(t *testing.T) {
 	r.mu.Lock()
 	r.waitSealedLocked()
 	r.mu.Unlock()
+}
+
+func TestReadTailVerifiesEverythingKeepsTheEnd(t *testing.T) {
+	r := NewMemory()
+	for i := 0; i < 10; i++ {
+		_, _ = r.Append(Event{Type: TypePolicy})
+	}
+	r.Close()
+	var buf strings.Builder
+	for _, e := range r.Recent(0) {
+		b, _ := json.Marshal(e)
+		buf.WriteString(string(b) + "\n")
+	}
+	log := buf.String()
+	tail, err := ReadTail(strings.NewReader(log), 3)
+	if err != nil || len(tail) != 3 || tail[0].Seq != 8 || tail[2].Seq != 10 {
+		t.Fatalf("tail: %v %+v", err, tail)
+	}
+	all, err := ReadTail(strings.NewReader(log), 0)
+	if err != nil || len(all) != 10 {
+		t.Fatal("n <= 0 reads everything")
+	}
+	// Tampering early in the log is still caught, even though only the tail is kept.
+	broken := strings.Replace(log, `"seq":2,`, `"seq":2,"note":{"x":"y"},`, 1)
+	if _, err := ReadTail(strings.NewReader(broken), 3); err == nil {
+		t.Fatal("the whole log must be verified")
+	}
 }

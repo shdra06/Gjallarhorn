@@ -118,3 +118,18 @@ func TestDenyBody(t *testing.T) {
 		t.Fatal("message")
 	}
 }
+
+func TestQuietDenials(t *testing.T) {
+	d := policy.Decision{Effect: policy.Deny, Code: "rule", RuleID: "refunds-need-an-operator", Reason: "Refunds only when a human operator started the chain"}
+	loud := string(DenyBodyFor(d, 42, false))
+	if !strings.Contains(loud, "refunds-need-an-operator") || !strings.Contains(loud, "human operator") {
+		t.Fatalf("by default the caller learns why: %s", loud)
+	}
+	quiet := string(DenyBodyFor(d, 42, true))
+	if strings.Contains(quiet, "refunds") || strings.Contains(quiet, "operator") || !strings.Contains(quiet, "event 42") || !strings.Contains(quiet, `"code":"rule"`) {
+		t.Fatalf("quiet denials hide the rule but keep a reference: %s", quiet)
+	}
+	if DenyMessage(d) != "Blocked by Gjallarhorn: "+d.Reason {
+		t.Fatal("DenyMessage")
+	}
+}

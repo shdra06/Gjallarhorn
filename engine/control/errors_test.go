@@ -67,10 +67,8 @@ func TestApplyNeedsReviewConsent(t *testing.T) {
 	seq := refunds(e)
 	// An unlabelled call by billing that a broad rule would also block.
 	e.Check(engine.Request{Plane: policy.PlaneMCP, Target: "billing.refund", VirtualKey: "vk-billing"})
-	rule := policy.Rule{ID: "copilot-billing-no-refunds", Effect: policy.Deny,
-		Match: policy.Match{Actors: []string{"agent:billing"}, Targets: []string{"billing.refund"}, Delegated: boolPtr(false)}}
-	// Delegated=false does not stop the delegated attack, so try the delegated-only rule plus collateral instead.
-	rule = policy.Rule{ID: "copilot-support-chains", Effect: policy.Deny,
+	// Stops the attack (started by support) and also billing's own unlabelled refund.
+	rule := policy.Rule{ID: "copilot-support-chains", Effect: policy.Deny,
 		Match: policy.Match{Targets: []string{"billing.refund"}, Origins: []string{"agent:support", "agent:billing"}}}
 	body, _ := json.Marshal(applyRequest{Seq: seq, Rule: rule})
 	etag := engine.PolicyHash(e.Policy())
@@ -90,8 +88,6 @@ func TestApplyNeedsReviewConsent(t *testing.T) {
 		t.Fatalf("the audit trail names the co-pilot: %v", last.Note)
 	}
 }
-
-func boolPtr(b bool) *bool { return &b }
 
 func TestOperatorHeader(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
@@ -135,5 +131,22 @@ func TestConsoleNotBuiltAndHead(t *testing.T) {
 	}
 	if _, err := NewHandler(nil, Options{AdminToken: token, DemoDriver: "http://[::1"}); err == nil {
 		t.Fatal("a bad demo driver URL is a config error")
+	}
+}
+
+func TestHealthHidesCountsWithoutTheToken(t *testing.T) {
+	srv, e := newServer(t)
+	e.Check(engine.Request{Plane: policy.PlaneLLM, Target: "m", VirtualKey: "vk-priya"})
+	_, public := get(t, srv.URL+"/v1/health", false)
+	if !strings.Contains(public, `"ok"`) || strings.Contains(public, "events") || strings.Contains(public, "lockdowns") {
+		t.Fatalf("public health: %s", public)
+	}
+	_, private := get(t, srv.URL+"/v1/health", true)
+	if !strings.Contains(private, `"events"`) || !strings.Contains(private, `"lockdowns"`) {
+		t.Fatalf("health with the token: %s", private)
+	}
+	_, stats := get(t, srv.URL+"/v1/stats", true)
+	if !strings.Contains(stats, `"decision_latency"`) || !strings.Contains(stats, `"last_seq"`) {
+		t.Fatalf("stats: %s", stats)
 	}
 }

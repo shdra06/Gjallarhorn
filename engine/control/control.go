@@ -74,7 +74,7 @@ func NewHandler(e *engine.Engine, opts Options) (http.Handler, error) {
 		s.origins[strings.TrimRight(o, "/")] = true
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/health", s.health)
+	mux.HandleFunc("GET /v1/health", s.health) // public, but details only with the token
 	mux.Handle("GET /v1/principals", s.auth(s.principals))
 	mux.Handle("GET /v1/lockdowns", s.auth(s.listLockdowns))
 	mux.Handle("POST /v1/lockdowns", s.auth(s.lock))
@@ -132,11 +132,15 @@ func (s *server) cors(next http.Handler) http.Handler {
 	})
 }
 
-func (s *server) auth(fn http.HandlerFunc) http.Handler {
+// authorized reports whether the request carries the admin token (constant-time compare).
+func (s *server) authorized(r *http.Request) bool {
 	want := []byte("Bearer " + s.opts.AdminToken)
+	return subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), want) == 1
+}
+
+func (s *server) auth(fn http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got := []byte(r.Header.Get("Authorization"))
-		if subtle.ConstantTimeCompare(got, want) != 1 {
+		if !s.authorized(r) {
 			writeError(w, http.StatusUnauthorized, "missing or invalid admin token")
 			return
 		}
@@ -189,14 +193,15 @@ func splitErrors(err error) []string {
 	return strings.Split(err.Error(), "\n")
 }
 
-func (s *server) health(w http.ResponseWriter, _ *http.Request) {
-	st := s.e.Recorder().Stats()
-	writeJSON(w, http.StatusOK, map[string]any{
-		"status":    "ok",
-		"version":   s.opts.Version,
-		"events":    st.Events,
-		"lockdowns": len(s.e.Lockdowns()),
-	})
+// health is public so load balancers can probe it. Counts that hint at what is going on
+// (events, lockdowns) are only shown to callers with the admin token.
+func (s *server) health(w http.ResponseWriter, r *http.Request) {
+	out := map[string]any{"status": "ok", "version": s.opts.Version}
+	if s.authorized(r) {
+		out["events"] = s.e.Recorder().Stats().Events
+		out["lockdowns"] = len(s.e.Lockdowns())
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *server) principals(w http.ResponseWriter, _ *http.Request) {
@@ -431,8 +436,15 @@ func (s *server) putMode(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, modeBody{Enforcing: &on})
 }
 
+type statsResponse struct {
+	recorder.Stats
+	// DecisionLatency is what Gjallarhorn costs each call on the request path, measured in
+	// the running gateway.
+	DecisionLatency engine.LatencyStats `json:"decision_latency"`
+}
+
 func (s *server) stats(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, s.e.Recorder().Stats())
+	writeJSON(w, http.StatusOK, statsResponse{Stats: s.e.Recorder().Stats(), DecisionLatency: s.e.DecisionLatency()})
 }
 
 // stream sends recorded events as Server-Sent Events: first the backlog after ?after= (or
