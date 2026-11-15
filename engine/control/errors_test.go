@@ -150,3 +150,37 @@ func TestHealthHidesCountsWithoutTheToken(t *testing.T) {
 		t.Fatalf("stats: %s", stats)
 	}
 }
+
+// Every route except the health probe and the console's static files needs the admin token.
+// A new endpoint added without auth fails this test.
+func TestEveryEndpointNeedsTheToken(t *testing.T) {
+	driver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("{}")) }))
+	defer driver.Close()
+	srv := consoleServer(t, Options{DemoDriver: driver.URL})
+	routes := []string{
+		"GET /v1/principals", "GET /v1/lockdowns", "POST /v1/lockdowns", "DELETE /v1/lockdowns/agent:x",
+		"GET /v1/policy", "PUT /v1/policy", "POST /v1/policy/validate", "POST /v1/simulate",
+		"GET /v1/grants", "POST /v1/grants", "DELETE /v1/grants/g1",
+		"GET /v1/events", "GET /v1/stream", "GET /v1/stats", "GET /v1/mode", "PUT /v1/mode",
+		"GET /v1/incidents", "GET /v1/incidents/1", "GET /v1/copilot",
+		"POST /v1/copilot/explain", "POST /v1/copilot/suggest", "POST /v1/copilot/apply",
+		"GET /demo/scenarios", "POST /demo/scenarios/x/run", "PUT /demo/traffic",
+	}
+	for _, rt := range routes {
+		method, path, _ := strings.Cut(rt, " ")
+		for _, auth := range []string{"", "Bearer wrong-token", "Bearer sk-bf-some-gateway-key"} {
+			req, _ := http.NewRequest(method, srv.URL+path, strings.NewReader("{}"))
+			if auth != "" {
+				req.Header.Set("Authorization", auth)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusUnauthorized {
+				t.Errorf("%s with %q: got %d, want 401", rt, auth, resp.StatusCode)
+			}
+		}
+	}
+}

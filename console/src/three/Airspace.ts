@@ -340,7 +340,7 @@ export class Airspace {
   private renderLabel(v: NodeView): void {
     const tag = roleTag[v.info.kind] ?? v.info.kind;
     const extra = [v.locked ? 'locked' : '', v.info.external ? 'outside party' : ''].filter(Boolean).join(', ');
-    v.button.innerHTML = '';
+    v.button.replaceChildren();
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = (v.locked ? '🔒 ' : '') + v.info.label;
