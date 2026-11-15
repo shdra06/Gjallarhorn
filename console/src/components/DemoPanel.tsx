@@ -18,6 +18,16 @@ function describe(r: ScenarioResult): { tone: 'good' | 'bad' | 'warn' | 'info'; 
   return { tone: 'info', title: `Done: ${r.title}`, body: effects ? `Effects: ${effects}` : r.verdict };
 }
 
+/** The attacks shown first: one of each main kind. */
+const FEATURED = [
+  'borrowed-refund',
+  'refund-with-operator-key',
+  'multi-step-injection',
+  'data-exfiltration',
+  'forged-chain-at-entry',
+  'locked-agent-unlocks-itself',
+];
+
 /** Demo-only controls: a loop of normal work, and one button per attack. */
 export function DemoPanel() {
   const demo = useStore((s) => s.demo);
@@ -26,6 +36,7 @@ export function DemoPanel() {
   const [running, setRunning] = useState<string | null>(null);
   const [open, setOpen] = useState(true);
   const [hint, setHint] = useState<Scenario | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!demo) return;
@@ -37,7 +48,10 @@ export function DemoPanel() {
   }, [demo]);
 
   if (!demo) return null;
-  const attacks = scenarios.filter((s) => s.label === 'attack');
+  const all = scenarios.filter((s) => s.label === 'attack');
+  // A short list first; the whole catalogue is one click away.
+  const featured = FEATURED.map((id) => all.find((s) => s.id === id)).filter((s): s is Scenario => !!s);
+  const attacks = showAll || featured.length === 0 ? all : featured;
 
   const toggleTraffic = async () => {
     const t = await act('Changing demo traffic', (a) => a.setTraffic(!traffic));
@@ -85,6 +99,11 @@ export function DemoPanel() {
               </li>
             ))}
           </ul>
+          {featured.length > 0 && all.length > featured.length && (
+            <button className="link small" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
+              {showAll ? 'Show the main attacks only' : `Show all ${all.length} attacks`}
+            </button>
+          )}
           <p id="demo-story" className="story small">
             {hint ? hint.story : 'Point at an attack to read what it does.'}
           </p>

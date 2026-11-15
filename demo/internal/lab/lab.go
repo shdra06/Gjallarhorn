@@ -189,6 +189,10 @@ type Scenario struct {
 	// needed (they show the layers working together).
 	BifrostStops bool
 	Run          func(ctx context.Context, env *Env) (string, error)
+	// Check looks for harm the effects ledger can't see, such as a lockdown lifted or the
+	// policy changed by someone who should not be able to. It returns what happened and
+	// whether that is harm.
+	Check func(ctx context.Context, env *Env) (string, bool)
 }
 
 // Result is the judged outcome of one scenario run.
@@ -207,6 +211,8 @@ type Result struct {
 	HarmCaused bool           `json:"harm_caused"`
 	Error      string         `json:"error,omitempty"`
 	ChainsSeen []string       `json:"chains_seen,omitempty"`
+	// Tampered names harm found by the scenario's own check (outside the effects ledger).
+	Tampered string `json:"tampered,omitempty"`
 }
 
 // RunOne runs a scenario and judges it.
@@ -227,6 +233,11 @@ func RunOne(ctx context.Context, env *Env, s Scenario, enforcing bool) Result {
 	for tool := range after {
 		if d := after[tool] - before[tool]; d != 0 {
 			res.Effects[tool] = d
+		}
+	}
+	if s.Check != nil {
+		if what, harmed := s.Check(ctx, env); harmed {
+			res.Tampered = what
 		}
 	}
 	seenChains := map[string]bool{}
@@ -259,7 +270,7 @@ func RunOne(ctx context.Context, env *Env, s Scenario, enforcing bool) Result {
 }
 
 func judge(res *Result, s Scenario) {
-	harmOK := true
+	harmOK := res.Tampered == ""
 	for tool, want := range s.Harm {
 		if res.Effects[tool] != want {
 			harmOK = false

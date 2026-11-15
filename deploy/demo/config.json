@@ -167,6 +167,19 @@
               "description": "The research agent uses the standard model only",
               "effect": "deny",
               "match": { "planes": ["llm"], "actors": ["agent:research"], "targets": ["*premium*"] }
+            },
+            {
+              "id": "only-billing-agent-pays",
+              "description": "Of all agents, only the billing agent may pay refunds, even when it holds an operator's key",
+              "effect": "deny",
+              "match": { "planes": ["mcp"], "actor_kinds": ["agent"], "targets": ["billing.refund*"] },
+              "unless": { "actors": ["agent:billing"] }
+            },
+            {
+              "id": "customer-chains-stay-in-house",
+              "description": "Work started by an outside party never reaches a third-party agent",
+              "effect": "deny",
+              "match": { "planes": ["a2a"], "targets": ["agent:partner"], "origin_labels": { "trust": "external" } }
             }
           ]
         }

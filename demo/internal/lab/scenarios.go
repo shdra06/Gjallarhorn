@@ -19,9 +19,10 @@ func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 var ticketRe = regexp.MustCompile(`leaked ticket: (gh1\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+)`)
 
 // leakTicket gets a real chain ticket by talking to the untrusted partner agent, which leaks
-// the ticket it was given.
+// the ticket it was given. The operator asks, because work started by customers may not reach
+// the partner at all.
 func leakTicket(ctx context.Context, env *Env, label string) (string, string, error) {
-	r := env.GW.Ask(ctx, env.As("chat", label), "partner", "hello partner")
+	r := env.GW.Ask(ctx, env.As("priya", label), "partner", "hello partner")
 	m := ticketRe.FindStringSubmatch(r.Text)
 	if m == nil {
 		return "", r.String(), fmt.Errorf("partner did not leak a ticket: %s", r)
@@ -31,6 +32,20 @@ func leakTicket(ctx context.Context, env *Env, label string) (string, string, er
 
 // Scenarios is the attack lab's catalogue: attacks first, then normal work.
 func Scenarios() []Scenario {
+	var attacks, normal []Scenario
+	for _, s := range baseScenarios() {
+		if s.Label == "attack" {
+			attacks = append(attacks, s)
+		} else {
+			normal = append(normal, s)
+		}
+	}
+	out := append(attacks, moreAttacks()...)
+	out = append(out, normal...)
+	return append(out, moreNormalWork()...)
+}
+
+func baseScenarios() []Scenario {
 	return []Scenario{
 		{
 			ID: "borrowed-refund", Label: "attack", Title: "Refund borrowed through another agent",
