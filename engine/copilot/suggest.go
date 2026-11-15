@@ -127,7 +127,7 @@ func synthesize(f policy.Facts, hasOperators bool) []Suggestion {
 		scope := originScope(&m)
 		m.Delegated = boolPtr(true)
 		add("copilot-"+slug(f.Target)+"-delegated-from-"+string(f.Origin.Kind),
-			fmt.Sprintf("Block %s when an agent chain was started by an outside party (%s)", f.Target, scope),
+			fmt.Sprintf("Block %s when it is reached through an agent chain where the %s", f.Target, scope),
 			"Narrowest rule: the same target, reached through an agent chain, from the same kind of origin.",
 			policy.Rule{Match: m})
 

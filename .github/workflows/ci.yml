@@ -25,9 +25,13 @@ jobs:
       - name: vet
         run: go vet ./...
       - name: test (race)
-        run: go test -race -count=1 -coverprofile=coverage.out ./...
-      - name: coverage
-        run: go tool cover -func=coverage.out | tail -1
+        run: |
+          set -o pipefail
+          go test -race -count=1 -coverprofile=coverage.out ./... | tee test.txt
+      - name: coverage (at least 90% in every package)
+        run: |
+          go tool cover -func=coverage.out | tail -1
+          awk '/coverage:/ { pct = $5; sub("%", "", pct); if (pct + 0 < 90) { print "below 90%: " $2 " " $5; bad = 1 } } END { exit bad }' test.txt
       - name: fuzz ticket verification (30s)
         run: go test ./ticket -run XXX -fuzz FuzzVerify -fuzztime 30s
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/shdra06/Gjallarhorn/engine/identity"
 )
 
 // Decision is the outcome for one call.
@@ -42,6 +44,10 @@ type Grant struct {
 func (g Grant) Validate() error {
 	if g.Actor == "" {
 		return fmt.Errorf("grant needs an actor")
+	}
+	// Grants match the actor exactly, so a malformed id could never match anything.
+	if !identity.ValidID(g.Actor) {
+		return fmt.Errorf("grant actor %q is not a principal id like agent:billing", g.Actor)
 	}
 	if !g.Plane.Valid() {
 		return fmt.Errorf("grant plane must be llm, mcp or a2a")
