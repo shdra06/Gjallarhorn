@@ -1,0 +1,12 @@
+# Serves the Gjallarhorn console (and its API) over HTTPS. Caddy gets the certificate itself.
+{$DEMO_DOMAIN} {
+	encode zstd gzip
+	# The live stream (Server-Sent Events) must not be buffered.
+	reverse_proxy demo:8787 {
+		flush_interval -1
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}

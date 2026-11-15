@@ -1,0 +1,51 @@
+# An always-on public demo: the Gjallarhorn demo stack behind Caddy (automatic HTTPS).
+# See deploy/live/README.md. Run from the repository root:
+#
+#   docker compose -f deploy/live/compose.yaml --env-file deploy/live/.env up -d --build
+#
+# Only the console (through Caddy) is public. Bifrost's own port stays inside the network.
+services:
+  bifrost:
+    # Bifrost with the Gjallarhorn plugin, built from source.
+    build:
+      context: ../..
+      dockerfile: deploy/Containerfile
+    image: gjallarhorn-bifrost:latest
+    entrypoint: ["true"] # build-only: the demo image below is based on it
+    restart: "no"
+
+  demo:
+    build:
+      context: ../..
+      dockerfile: deploy/demo/Containerfile
+      args:
+        BASE: gjallarhorn-bifrost:latest
+    image: gjallarhorn-demo:latest
+    depends_on:
+      bifrost:
+        condition: service_completed_successfully
+    environment:
+      GJ_TICKET_KEY: ${GJ_TICKET_KEY:?set GJ_TICKET_KEY in deploy/live/.env}
+      GJ_ADMIN_TOKEN: ${GJ_ADMIN_TOKEN:?set GJ_ADMIN_TOKEN in deploy/live/.env}
+    restart: unless-stopped
+    expose:
+      - "8787"
+
+  caddy:
+    image: caddy:2.11.6-alpine
+    depends_on:
+      - demo
+    environment:
+      DEMO_DOMAIN: ${DEMO_DOMAIN:?set DEMO_DOMAIN in deploy/live/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

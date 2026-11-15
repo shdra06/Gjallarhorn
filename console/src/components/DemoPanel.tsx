@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Scenario, ScenarioResult } from '../api/types';
-import { act } from '../state/session';
+import { act, getApi } from '../state/session';
 import { store, useStore } from '../state/store';
 
 function describe(r: ScenarioResult): { tone: 'good' | 'bad' | 'warn' | 'info'; title: string; body: string } {
@@ -45,6 +45,18 @@ export function DemoPanel() {
       setScenarios(list);
       setTraffic(t.on);
     });
+    // Someone else (another viewer, a script) may switch traffic on or off: keep the switch true.
+    const timer = setInterval(() => {
+      try {
+        getApi()
+          .traffic()
+          .then((t) => setTraffic(t.on))
+          .catch(() => undefined);
+      } catch {
+        // signed out
+      }
+    }, 5000);
+    return () => clearInterval(timer);
   }, [demo]);
 
   if (!demo) return null;

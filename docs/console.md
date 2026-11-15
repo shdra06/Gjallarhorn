@@ -38,6 +38,9 @@ npm test           # unit and component tests
 npm run build      # type-check, then build to console/dist
 ```
 
+The README screenshots come from a running demo, taken with headless Chrome or Edge:
+`node console/scripts/screenshots.mjs` (saves to `docs/images/`).
+
 ## What's on screen
 
 ### Airspace (key 1)
