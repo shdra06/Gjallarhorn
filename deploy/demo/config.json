@@ -1,4 +1,11 @@
 {
+  "framework": {
+    "pricing": {
+      "pricing_url": "file:///app/offline/pricing.json",
+      "model_parameters_url": "file:///app/offline/model-parameters.json",
+      "mcp_library_sync_interval": 0
+    }
+  },
   "client": {
     "a2a_external_client_url": "http://127.0.0.1:8080",
     "a2a_private_allowlist": ["127.0.0.1", "localhost"]

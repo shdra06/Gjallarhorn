@@ -1,5 +1,7 @@
 # Gjallarhorn developer commands. CONTAINER can be podman (default) or docker.
 CONTAINER ?= podman
+# Podman names local images localhost/<name>; Docker uses the bare name.
+BASE      ?= $(if $(filter podman,$(CONTAINER)),localhost/gjallarhorn-bifrost:latest,gjallarhorn-bifrost:latest)
 VERSION   ?= 0.1.0-dev
 
 .PHONY: help test race cover bench fuzz fmt vet image dev-image dev-test spike spike-test console demo-image demo lab
@@ -32,7 +34,7 @@ image: ## Build Bifrost + the Gjallarhorn plugin
 	$(CONTAINER) build -t gjallarhorn-bifrost --build-arg GJ_VERSION=$(VERSION) -f deploy/Containerfile .
 
 dev-image: image ## Build the development image (adds a mock model and a sample config)
-	$(CONTAINER) build -t gjallarhorn-dev -f deploy/dev/Containerfile .
+	$(CONTAINER) build -t gjallarhorn-dev --build-arg BASE=$(BASE) -f deploy/dev/Containerfile .
 
 dev-test: ## Run integration tests against the development image
 	ENGINE=$(CONTAINER) bash deploy/dev/test.sh
@@ -47,10 +49,10 @@ console: ## Type-check, test and build the operator console
 	cd console && npm ci && npm run typecheck && npm test && npm run build
 
 demo-image: image ## Build the full demo (plugin, console, agents, tools, attack lab)
-	$(CONTAINER) build -t gjallarhorn-demo -f deploy/demo/Containerfile .
+	$(CONTAINER) build -t gjallarhorn-demo --build-arg BASE=$(BASE) -f deploy/demo/Containerfile .
 
-demo: ## Start the demo and print the console address
-	ENGINE=$(CONTAINER) bash deploy/demo/run-console.sh
+demo: ## Build what is missing and start the demo (same as ./demo.sh)
+	ENGINE=$(CONTAINER) ./demo.sh
 
 lab: ## Run the attack lab and the co-pilot fire drill
 	ENGINE=$(CONTAINER) bash deploy/demo/run-lab.sh

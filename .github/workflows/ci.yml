@@ -83,14 +83,12 @@ jobs:
       - name: build images
         run: |
           docker build -t gjallarhorn-bifrost -f deploy/Containerfile .
-          sed -i 's#FROM localhost/gjallarhorn-bifrost:latest#FROM gjallarhorn-bifrost#' deploy/dev/Containerfile
-          docker build -t gjallarhorn-dev -f deploy/dev/Containerfile .
+          docker build -t gjallarhorn-dev --build-arg BASE=gjallarhorn-bifrost:latest -f deploy/dev/Containerfile .
       - name: integration tests
         run: ENGINE=docker bash deploy/dev/test.sh
       - name: attack lab (monitor baseline, enforcing, co-pilot drill)
         run: |
-          sed -i 's#FROM localhost/gjallarhorn-bifrost:latest#FROM gjallarhorn-bifrost#' deploy/demo/Containerfile
-          docker build -t gjallarhorn-demo -f deploy/demo/Containerfile .
+          docker build -t gjallarhorn-demo --build-arg BASE=gjallarhorn-bifrost:latest -f deploy/demo/Containerfile .
           ENGINE=docker bash deploy/demo/run-lab.sh
       - uses: actions/upload-artifact@v4
         if: always()

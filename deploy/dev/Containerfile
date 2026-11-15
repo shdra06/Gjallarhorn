@@ -3,12 +3,16 @@
 #   podman build -t gjallarhorn-bifrost -f deploy/Containerfile .
 #   podman build -t gjallarhorn-dev -f deploy/dev/Containerfile .
 
+# Podman: localhost/gjallarhorn-bifrost; Docker: --build-arg BASE=gjallarhorn-bifrost:latest
+ARG BASE=localhost/gjallarhorn-bifrost:latest
+
 FROM golang:1.27.4-alpine3.24@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf AS mock
 COPY deploy/spike/mock/ /src/mock/
 RUN cd /src/mock && CGO_ENABLED=0 go build -trimpath -o /out/mock .
 
-FROM localhost/gjallarhorn-bifrost:latest
+FROM ${BASE}
 COPY --from=mock /out/mock /app/mock
 COPY --chown=bifrost:bifrost deploy/dev/config.json /app/data/config.json
+COPY deploy/offline/ /app/offline/
 COPY deploy/dev/run.sh /app/run.sh
 ENTRYPOINT ["/bin/sh", "/app/run.sh"]

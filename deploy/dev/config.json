@@ -1,4 +1,11 @@
 {
+  "framework": {
+    "pricing": {
+      "pricing_url": "file:///app/offline/pricing.json",
+      "model_parameters_url": "file:///app/offline/model-parameters.json",
+      "mcp_library_sync_interval": 0
+    }
+  },
   "providers": {
     "mock": {
       "custom_provider_config": {
