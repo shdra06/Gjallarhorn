@@ -137,7 +137,7 @@ export function Landing() {
   const conn = useStore((s) => s.conn);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [signIn, setSignIn] = useState<null | 'asked' | 'needed'>(conn === 'unauthorized' ? 'needed' : null);
+  const [signIn, setSignIn] = useState<null | 'asked' | 'needed'>(conn === 'unauthorized' ? 'asked' : null);
   const [tab, setTab] = useState('Run the demo');
   const bars = useRef<HTMLDivElement>(null);
   const [barsIn, setBarsIn] = useState(false);

@@ -29,7 +29,8 @@ export function savedToken(): string | null {
 export async function connect(token: string): Promise<void> {
   disconnect();
   const a = new Api(token.trim());
-  store.set({ conn: 'connecting' });
+  // The sign-in form stays on screen while the token is checked, so a wrong token is explained
+  // there; the console only takes over once the token is accepted.
   try {
     await a.lockdowns(); // the cheapest authenticated call: checks the token
   } catch (e) {
@@ -38,6 +39,7 @@ export async function connect(token: string): Promise<void> {
     throw e;
   }
   api = a;
+  store.set({ conn: 'connecting' });
   try {
     sessionStorage.setItem(TOKEN_KEY, token.trim());
   } catch {

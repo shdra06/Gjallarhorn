@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { store } from '../state/store';
 import { Landing } from './Landing';
@@ -60,5 +60,20 @@ describe('Theme', () => {
     store.reset();
     expect(store.get().theme).toBe('light');
     expect(getComputedStyle(document.documentElement).colorScheme ?? '').toBeDefined();
+  });
+});
+
+describe('Signing in with a token, in the whole app', () => {
+  it('keeps the form on screen and explains a wrong token', async () => {
+    const { App } = await import('../App');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"error":"missing or invalid admin token"}', { status: 401 }));
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Sign in with a token/ }));
+    fireEvent.change(screen.getByLabelText('Admin token'), { target: { value: 'wrong-token' } });
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in' }));
+    });
+    expect((await screen.findByRole('alert')).textContent).toContain('not accepted');
+    expect(screen.getByRole('dialog').textContent).not.toContain("doesn't share");
   });
 });
