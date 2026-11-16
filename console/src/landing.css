@@ -5,10 +5,16 @@
   min-height: 100%;
   font-family: var(--l-font);
   background: var(--bg);
-  overflow-x: hidden;
+  /* clip, not hidden: hidden would make this a scroll box and stop the story panel pinning. */
+  overflow-x: clip;
 }
 .landing a {
   color: var(--allowed);
+}
+/* The console clips its <main>; the landing page scrolls, and its story panel pins. */
+.landing main {
+  overflow: visible;
+  min-height: auto;
 }
 .l-nav {
   position: sticky;
@@ -109,7 +115,7 @@
 }
 .hero-scene {
   position: absolute;
-  inset: 0 0 0 28%;
+  inset: 0 0 0 22%;
   z-index: -1;
 }
 .hero-canvas {
@@ -142,6 +148,37 @@
 .hero-label.outside {
   border-color: var(--external);
 }
+.hero-label.end {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+.hero-label.gate {
+  font: 700 11px var(--l-mono);
+  letter-spacing: 0.32em;
+  color: #d9a441;
+  opacity: 0.95;
+  text-shadow: 0 0 12px rgba(217, 164, 65, 0.5);
+}
+.hero-cut.still {
+  animation: none;
+}
+.hero-paused {
+  position: absolute;
+  right: clamp(16px, 4vw, 48px);
+  top: 18px;
+  z-index: 2;
+  border: 1px solid var(--flagged);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font: 500 0.8rem var(--l-font);
+  cursor: pointer;
+}
+.hero-paused strong {
+  color: var(--flagged);
+}
 .l-hero::before {
   content: '';
   position: absolute;
@@ -154,7 +191,7 @@
 }
 .hero-cut {
   position: absolute;
-  transform: translate(-50%, -170%);
+  transform: translate(70px, 40px);
   padding: 3px 9px;
   border-radius: 6px;
   border: 1px solid var(--blocked);
@@ -169,16 +206,16 @@
 @keyframes cut-in {
   0% {
     opacity: 0;
-    transform: translate(-50%, -120%) scale(0.9);
+    transform: translate(60px, 40px) scale(0.9);
   }
-  10%,
-  70% {
+  8%,
+  75% {
     opacity: 1;
-    transform: translate(-50%, -170%) scale(1);
+    transform: translate(70px, 40px) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -170%);
+    transform: translate(70px, 40px);
   }
 }
 .l-hero-copy {
@@ -549,6 +586,256 @@
 }
 .login-card .btn.ghost {
   justify-content: center;
+}
+
+/* Scroll story */
+.s-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 48px;
+  align-items: start;
+}
+.s-steps {
+  list-style: none;
+  margin: 0;
+  padding: 8vh 0 18vh;
+}
+.s-steps li {
+  min-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0.35;
+  transition: opacity 0.4s;
+}
+.s-steps li.active {
+  opacity: 1;
+}
+.s-n {
+  font: 600 0.8rem var(--l-mono);
+  color: var(--allowed);
+}
+.s-steps h3 {
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--text);
+  margin: 10px 0 10px;
+}
+.s-steps p {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin: 0;
+}
+.s-pin {
+  position: sticky;
+  top: calc(50vh - 240px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel-solid);
+  padding: 18px 18px 14px;
+}
+.s-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.s-art text {
+  font: 500 11px var(--l-font);
+  fill: var(--text);
+}
+.s-art .mono {
+  font-family: var(--l-mono);
+}
+.s-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.s-dots span {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+  transition: background 0.3s;
+}
+.s-dots span.on {
+  background: var(--allowed);
+}
+.s-node rect {
+  fill: var(--bg-2);
+  stroke: var(--line-2);
+  stroke-width: 1.5;
+  transition:
+    stroke 0.4s,
+    fill 0.4s;
+}
+.s-node-label {
+  font-weight: 600 !important;
+}
+.s-node-tag {
+  font: 500 9px var(--l-mono) !important;
+  fill: var(--muted) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.s-node.outside rect {
+  stroke: var(--external);
+}
+.s-node.tricked rect {
+  stroke: var(--flagged);
+}
+.s-node.locked rect {
+  stroke: var(--blocked);
+  fill: var(--c21);
+}
+.s-node.target rect {
+  stroke: var(--allowed);
+}
+.s-node.target-stopped rect {
+  stroke: var(--blocked);
+}
+.s-edge {
+  fill: none;
+  stroke: var(--allowed);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 6;
+  opacity: 0;
+  animation: s-flow 1s linear infinite;
+  transition:
+    opacity 0.4s,
+    stroke 0.4s;
+}
+.s-edge.on {
+  opacity: 1;
+}
+.s-edge.tricked {
+  stroke: var(--flagged);
+}
+.s-edge.cut {
+  stroke: var(--blocked);
+  stroke-dasharray: 6 6;
+  /* Only the first half is drawn: the call stops at the gate. */
+  clip-path: inset(0 30% 0 0);
+}
+@keyframes s-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+.s-bubble,
+.s-gate,
+.s-rule,
+.s-lock,
+.s-ticket,
+.s-stamp {
+  opacity: 0;
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
+}
+.s-bubble.on,
+.s-gate.on,
+.s-rule.on,
+.s-lock.on,
+.s-ticket.on,
+.s-stamp.on {
+  opacity: 1;
+}
+.s-stamp.d1 {
+  transition-delay: 0.25s;
+}
+.s-stamp.d2 {
+  transition-delay: 0.5s;
+}
+.s-bubble rect {
+  fill: var(--c21);
+  stroke: var(--blocked);
+}
+.s-bubble text {
+  fill: var(--blocked) !important;
+  font-size: 11px;
+}
+.s-gate polygon {
+  fill: var(--c21);
+  stroke: var(--blocked);
+  stroke-width: 2;
+}
+.s-gate path {
+  stroke: var(--blocked);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.s-gate.on {
+  animation: s-pulse 1.6s ease-out infinite;
+  transform-box: fill-box;
+}
+@keyframes s-pulse {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(255, 77, 106, 0.8));
+  }
+  60% {
+    filter: drop-shadow(0 0 12px rgba(255, 77, 106, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 77, 106, 0));
+  }
+}
+.s-rule rect {
+  fill: var(--panel-solid);
+  stroke: var(--blocked);
+}
+.s-rule text:first-of-type {
+  fill: var(--blocked) !important;
+  font-weight: 600;
+}
+.s-rule text:last-of-type {
+  fill: var(--muted) !important;
+}
+.s-lock circle {
+  fill: none;
+  stroke: var(--blocked);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+.s-lock text {
+  fill: var(--blocked) !important;
+  font: 700 10px var(--l-mono) !important;
+  letter-spacing: 0.1em;
+}
+.s-ticket rect {
+  fill: var(--bg);
+  stroke: var(--line-2);
+  stroke-dasharray: 5 4;
+}
+.s-ticket text {
+  font-family: var(--l-mono) !important;
+  white-space: pre;
+}
+.s-ticket-head {
+  fill: var(--good) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em;
+}
+.s-stamp.warn {
+  fill: var(--blocked) !important;
+}
+@media (max-width: 960px) {
+  .s-grid {
+    grid-template-columns: 1fr;
+  }
+  .s-pin {
+    top: 64px;
+    z-index: 2;
+  }
+  .s-steps {
+    padding-top: 0;
+  }
+  .s-steps li {
+    min-height: 48vh;
+  }
 }
 
 @media (max-width: 960px) {

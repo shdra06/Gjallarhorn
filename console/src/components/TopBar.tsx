@@ -73,8 +73,13 @@ export function TopBar() {
           {connText[conn]}
         </span>
         <ThemeToggle />
-        <button className="icon-btn" aria-pressed={reduced} title="Reduce motion" aria-label="Reduce motion" onClick={() => store.setReducedMotion(!reduced)}>
-          {reduced ? '◼' : '◆'}
+        <button
+          className={`motion-btn${reduced ? ' off' : ''}`}
+          aria-pressed={!reduced}
+          title={reduced ? 'Animation is off: calls appear without flying. Click to turn it on.' : 'Turn animation off'}
+          onClick={() => store.setReducedMotion(!reduced)}
+        >
+          Motion {reduced ? 'off' : 'on'}
         </button>
         <button className="icon-btn" title="Help and keyboard shortcuts (?)" aria-label="Help and keyboard shortcuts" onClick={() => store.set({ helpOpen: true })}>
           ?

@@ -512,6 +512,25 @@ main:focus {
   background: var(--flagged);
 }
 
+/* Motion switch: says on or off in words */
+.motion-btn {
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.motion-btn:hover {
+  color: var(--text);
+}
+.motion-btn.off {
+  border-color: var(--flagged);
+  color: var(--flagged);
+}
+
 /* Theme switch: light, dark, or follow the system */
 .icon {
   flex: none;
@@ -1457,6 +1476,8 @@ td.why {
   inset: 0;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 380px;
+  /* One row exactly as tall as the page, so each column scrolls on its own. */
+  grid-template-rows: minmax(0, 1fr);
 }
 .policy-side,
 .simulation {
@@ -1503,6 +1524,7 @@ td.why {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   padding: 10px 14px;
   gap: 8px;
 }
@@ -1538,6 +1560,12 @@ td.why {
 }
 .gutter span {
   display: block;
+}
+/* Room for the editor's horizontal scrollbar, so the numbers stay level with the text at the end. */
+.gutter::after {
+  content: '';
+  display: block;
+  height: 20px;
 }
 .code textarea {
   flex: 1;
@@ -1796,8 +1824,16 @@ td.why {
 @media (max-width: 1100px) {
   .policy-view {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto auto auto;
     overflow: auto;
+  }
+  .policy-side,
+  .simulation {
+    overflow: visible;
+  }
+  .editor .code {
+    height: 70vh;
+    flex: none;
   }
   .feed {
     width: 240px;

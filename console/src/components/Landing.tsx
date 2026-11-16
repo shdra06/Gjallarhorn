@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { startDemo } from '../state/session';
-import { useStore } from '../state/store';
-import type { Hero } from '../three/Hero';
+import { store, useStore } from '../state/store';
+import type { Bridge } from '../three/Bridge';
 import { webglAvailable } from '../three/webgl';
 import { IconArrowRight, IconGithub, IconKey } from './Icons';
 import { LoginForm } from './Login';
 import { Logo } from './Logo';
+import { Story } from './Story';
 import { ThemeToggle } from './ThemeToggle';
 
 const REPO = 'https://github.com/shdra06/Gjallarhorn';
 const DOC = (f: string) => `${REPO}/blob/main/${f}`;
 
-/** The live 3D airspace behind the hero, loaded on demand. Shows where the attack is cut off. */
+/** The 3D Bifrost bridge behind the hero, loaded on demand. Labels the attack it stops. */
 function HeroScene() {
   const host = useRef<HTMLDivElement>(null);
   const theme = useStore((s) => s.theme);
@@ -20,15 +21,15 @@ function HeroScene() {
 
   useEffect(() => {
     if (!host.current || !webglAvailable()) return;
-    let hero: Hero | null = null;
+    let hero: Bridge | null = null;
     let gone = false;
-    import('../three/Hero')
-      .then(({ Hero }) => {
+    import('../three/Bridge')
+      .then(({ Bridge }) => {
         if (gone || !host.current) return;
-        hero = new Hero(host.current, {
+        hero = new Bridge(host.current, {
           reducedMotion: reduced,
           theme,
-          onCut: (x, y) => setCut((c) => ({ x, y, n: (c?.n ?? 0) + 1 })),
+          onBlock: (x, y) => setCut((c) => ({ x, y, n: (c?.n ?? 0) + 1 })),
         });
       })
       .catch(() => undefined);
@@ -39,12 +40,17 @@ function HeroScene() {
   }, [theme, reduced]);
 
   return (
-    <div className="hero-scene" aria-hidden="true">
-      <div className="hero-canvas" ref={host} />
+    <div className="hero-scene">
+      <div className="hero-canvas" ref={host} aria-hidden="true" />
       {cut && (
-        <div key={cut.n} className="hero-cut" style={{ left: `${cut.x * 100}%`, top: `${cut.y * 100}%` }}>
-          ✕ refunds-need-an-operator
+        <div key={cut.n} className={`hero-cut${reduced ? ' still' : ''}`} style={{ left: `${cut.x * 100}%`, top: `${cut.y * 100}%` }} aria-hidden="true">
+          ✕ blocked · refunds-need-an-operator
         </div>
+      )}
+      {reduced && (
+        <button className="hero-paused" onClick={() => store.setReducedMotion(false)}>
+          Animation paused (reduce motion is on) · <strong>Play</strong>
+        </button>
       )}
     </div>
   );
@@ -181,6 +187,7 @@ export function Landing() {
           <span>Gjallarhorn</span>
         </a>
         <nav className="l-links" aria-label="Sections">
+          <a href="#how">How it works</a>
           <a href="#results">Results</a>
           <a href="#features">Features</a>
           <a href="#start">Quick start</a>
@@ -232,9 +239,11 @@ export function Landing() {
             </div>
           </div>
           <p className="l-hero-caption">
-            Live: normal calls in blue. Every few seconds an outside chat tricks support into asking billing for a refund, and the last leg is cut off in red.
+            Bifrost, the rainbow bridge, is your gateway; Gjallarhorn is the horn at its gate. Calls stream across. When a tricked agent sends a refund nobody approved, the gate stops it and the horn sounds.
           </p>
         </section>
+
+        <Story />
 
         <section className="l-section" id="results" aria-labelledby="results-title">
           <Label>RESULTS</Label>

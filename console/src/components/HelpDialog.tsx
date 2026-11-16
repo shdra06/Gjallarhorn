@@ -58,7 +58,7 @@ export function HelpDialog() {
           </dt>
           <dd>This help</dd>
         </dl>
-        <p className="muted">Motion follows your system's reduced-motion setting. The ◆ button in the top bar switches it for this console.</p>
+        <p className="muted">Motion follows your system's reduced-motion setting. The “Motion on / off” button in the top bar switches it for this console; when it's off, calls appear without flying.</p>
       </div>
       <div className="modal-actions">
         <button
