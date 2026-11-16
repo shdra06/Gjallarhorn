@@ -23,6 +23,18 @@ Gjallarhorn does; click **Start the demo**. It signs in and turns on normal work
 setting (the default) the endpoint returns `{"public_demo": false}`, and the landing page asks for
 the token and points to the terminal, where `run-console.sh` prints it (`Admin token: …`).
 
+**Bifrost's dashboard.** The demo image also builds Bifrost's own web dashboard, the way
+Bifrost's official image does, at <http://localhost:18082/>. Bifrost asks for its admin login
+there (demo values: `admin` / `demo-bifrost-password`, set by `BIFROST_ADMIN_USERNAME` and
+`BIFROST_ADMIN_PASSWORD`). Agents are not affected: they authenticate with their virtual keys.
+Useful pages: **Plugins** (Gjallarhorn loaded, hooked into LLM, MCP, A2A and HTTP), **LLM Logs**
+and **MCP Logs** (every call; the ones Gjallarhorn stopped are errors reading "Blocked by
+Gjallarhorn").
+
+![Bifrost's Plugins page: the gjallarhorn plugin loaded from /app/plugins/gjallarhorn.so, hooked into LLM, MCP, A2A and HTTP](images/bifrost-plugins.png)
+
+![Bifrost's MCP Logs: the demo agents' tool calls, including billing refund attempts](images/bifrost-mcp-logs.png)
+
 **Light and dark.** The ☀ / ☾ / system buttons in the top bar switch the theme; dark is the
 default. The layout is the same in both.
 

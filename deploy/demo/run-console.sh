@@ -34,10 +34,13 @@ cat <<MSG
 
 Gjallarhorn is running.
 
-  Console:      http://localhost:${CP}/
-  Admin token:  ${ADMIN}
-  Gateway:      http://localhost:${GW}/  (Bifrost with the Gjallarhorn plugin)
+  Gjallarhorn console:  http://localhost:${CP}/
+  Admin token:          ${ADMIN}
+  Bifrost dashboard:    http://localhost:${GW}/  (Bifrost itself, with the Gjallarhorn plugin loaded)
+  Bifrost login:        admin / demo-bifrost-password
 
-In the console, click "Start the demo", then launch an attack from the demo panel.
+In the Gjallarhorn console, click "Start the demo", then launch an attack from the demo panel.
+Open Bifrost's dashboard to see the same calls from Bifrost's side: its Logs page lists every
+request, and the ones Gjallarhorn stopped show as errors "Blocked by Gjallarhorn".
 Stop it with: bash deploy/demo/run-console.sh stop
 MSG

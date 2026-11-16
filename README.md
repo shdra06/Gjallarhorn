@@ -30,6 +30,10 @@ cd Gjallarhorn
 - **Then:** open <http://localhost:18788/> and click **Start the demo**. There's no token to type:
   the demo server hands it to the console (`control.public_demo`, a demo-only setting). On a
   server without that setting, sign in with the admin token the script prints.
+- **Bifrost's own dashboard** is at <http://localhost:18082/> (sign in as `admin` /
+  `demo-bifrost-password`). It shows the same traffic from Bifrost's side: the Plugins page lists
+  Gjallarhorn as loaded, and the LLM and MCP logs show each blocked call as an error that reads
+  "Blocked by Gjallarhorn".
 - **In the console:** normal work is already running. Launch an attack and watch it get cut off. Click
   the red ✕ to see the whole chain, ask the AI co-pilot what happened, or lock the agent.
 

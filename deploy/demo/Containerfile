@@ -35,5 +35,7 @@ COPY --chown=bifrost:bifrost deploy/demo/config.json /app/data/config.json
 # Local pricing data, so Bifrost starts without internet access (see deploy/offline/README.md).
 COPY deploy/offline/ /app/offline/
 COPY deploy/demo/run.sh /app/run.sh
+# Bifrost's own dashboard login, for the demo only (printed by run-console.sh). Override with -e.
+ENV BIFROST_ADMIN_USERNAME=admin BIFROST_ADMIN_PASSWORD=demo-bifrost-password
 EXPOSE 8080 8787 9100
 ENTRYPOINT ["/bin/sh", "/app/run.sh"]

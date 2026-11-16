@@ -150,7 +150,7 @@ still apply then, but chain rules and lockdowns don't.
 | `control.demo_driver` | Lets token holders run scripted traffic |
 | `control.public_demo: true` | Hands the admin token to anyone who can open the console (`GET /v1/demo-access`), so the landing page can start the demo in one click. The plugin warns when this is on |
 | `guards.accept_bad_tickets: true` | Lets calls with forged, expired or mismatched tickets through (they are still recorded) |
-| Demo keys and tokens | They are in this repository |
+| Demo keys and tokens, including Bifrost's demo dashboard login (`admin` / `demo-bifrost-password`) | They are in this repository |
 
 ### 10. What blocked callers learn
 

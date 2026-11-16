@@ -1,4 +1,5 @@
 {
+  "disable_onboarding": true,
   "framework": {
     "pricing": {
       "pricing_url": "file:///app/offline/pricing.json",
@@ -8,7 +9,13 @@
   },
   "client": {
     "a2a_external_client_url": "http://127.0.0.1:8080",
-    "a2a_private_allowlist": ["127.0.0.1", "localhost"]
+    "a2a_private_allowlist": ["127.0.0.1", "localhost"],
+    "enable_logging": true
+  },
+  "logs_store": {
+    "enabled": true,
+    "type": "sqlite",
+    "config": { "path": "/app/data/bifrost-logs.db" }
   },
   "providers": {
     "mock": {
@@ -35,6 +42,11 @@
     ]
   },
   "governance": {
+    "auth_config": {
+      "admin_username": "env.BIFROST_ADMIN_USERNAME",
+      "admin_password": "env.BIFROST_ADMIN_PASSWORD",
+      "is_enabled": true
+    },
     "virtual_keys": [
       {
         "id": "vk-chat", "name": "customer chat app", "value": "sk-bf-chat-demo", "is_active": true,
