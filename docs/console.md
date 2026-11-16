@@ -15,8 +15,18 @@ podman build -t gjallarhorn-demo -f deploy/demo/Containerfile .
 bash deploy/demo/run-console.sh
 ```
 
-Then open <http://localhost:18788/> and sign in with the token the script prints. In the demo
-panel:
+Then open <http://localhost:18788/>. The landing page shows a live 3D airspace and what
+Gjallarhorn does; click **Start the demo**. It signs in and turns on normal work for you.
+
+**Where the token comes from.** The demo config sets `control.public_demo: true`, so
+`GET /v1/demo-access` hands the admin token to the console and nobody has to type it. Without that
+setting (the default) the endpoint returns `{"public_demo": false}`, and the landing page asks for
+the token and points to the terminal, where `run-console.sh` prints it (`Admin token: …`).
+
+**Light and dark.** The ☀ / ☾ / system buttons in the top bar switch the theme; dark is the
+default. The layout is the same in both.
+
+In the demo panel:
 1. Turn on **normal work**.
 2. Launch an attack, for example **Refund borrowed through another agent**.
 

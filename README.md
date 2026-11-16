@@ -27,8 +27,10 @@ cd Gjallarhorn
 - **First run:** it builds Bifrost with the Gjallarhorn plugin, the demo company, the console and
   the attack lab, which takes 10–15 minutes. After that it starts in seconds, and it needs no
   internet access once built.
-- **Then:** open <http://localhost:18788/> and sign in with the token it prints.
-- **In the console:** turn on **Normal work**, then launch an attack and watch it get cut off. Click
+- **Then:** open <http://localhost:18788/> and click **Start the demo**. There's no token to type:
+  the demo server hands it to the console (`control.public_demo`, a demo-only setting). On a
+  server without that setting, sign in with the admin token the script prints.
+- **In the console:** normal work is already running. Launch an attack and watch it get cut off. Click
   the red ✕ to see the whole chain, ask the AI co-pilot what happened, or lock the agent.
 
 Other commands: `./demo.sh lab` runs all 31 attacks and the co-pilot fire drill, `./demo.sh measure`

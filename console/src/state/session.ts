@@ -76,6 +76,21 @@ export async function connect(token: string): Promise<void> {
   });
 }
 
+/**
+ * The landing page's "Start the demo": on a public demo server, GET /v1/demo-access hands out
+ * the token, so visitors don't type one. Signs in, turns on normal work so the airspace is busy,
+ * and returns true. Returns false when this server doesn't share its token.
+ */
+export async function startDemo(): Promise<boolean> {
+  const res = await fetch('/v1/demo-access');
+  if (!res.ok) return false;
+  const body = (await res.json()) as { public_demo?: boolean; token?: string };
+  if (!body.public_demo || !body.token) return false;
+  await connect(body.token);
+  await api?.setTraffic(true).catch(() => undefined);
+  return true;
+}
+
 export function disconnect(): void {
   stop?.();
   stop = null;

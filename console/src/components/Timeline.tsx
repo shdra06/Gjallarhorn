@@ -9,6 +9,7 @@ const BUCKETS = 120;
 export function Timeline() {
   const events = useStore((s) => s.events);
   const replay = useStore((s) => s.replay);
+  const theme = useStore((s) => s.theme);
   const canvas = useRef<HTMLCanvasElement>(null);
 
   const span = useMemo(() => {
@@ -38,16 +39,21 @@ export function Timeline() {
     if (!g) return;
     g.scale(dpr, dpr);
     g.clearRect(0, 0, w, h);
+    const css = getComputedStyle(c);
+    const okColor = css.getPropertyValue('--allowed').trim() || '#38e1ff';
+    const badColor = css.getPropertyValue('--blocked').trim() || '#ff3b5c';
     const bw = w / BUCKETS;
     for (let i = 0; i < BUCKETS; i++) {
       const okH = (span.ok[i]! / span.max) * (h - 4);
       const badH = (span.bad[i]! / span.max) * (h - 4);
-      g.fillStyle = 'rgba(56,225,255,0.55)';
+      g.globalAlpha = 0.55;
+      g.fillStyle = okColor;
       g.fillRect(i * bw + 0.5, h - okH, Math.max(1, bw - 1), okH);
-      g.fillStyle = 'rgba(255,59,92,0.95)';
+      g.globalAlpha = 0.95;
+      g.fillStyle = badColor;
       g.fillRect(i * bw + 0.5, h - okH - badH, Math.max(1, bw - 1), badH);
     }
-  }, [span]);
+  }, [span, theme]);
 
   if (!span) {
     return (

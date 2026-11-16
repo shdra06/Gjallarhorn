@@ -148,6 +148,7 @@ still apply then, but chain rules and lockdowns don't.
 |---|---|
 | `accept_labels: true` | Any caller can label its own traffic as attack or benign. Labels feed replay verdicts and co-pilot proofs. The plugin warns when this is on |
 | `control.demo_driver` | Lets token holders run scripted traffic |
+| `control.public_demo: true` | Hands the admin token to anyone who can open the console (`GET /v1/demo-access`), so the landing page can start the demo in one click. The plugin warns when this is on |
 | `guards.accept_bad_tickets: true` | Lets calls with forged, expired or mismatched tickets through (they are still recorded) |
 | Demo keys and tokens | They are in this repository |
 

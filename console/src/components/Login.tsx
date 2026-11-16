@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { ApiError } from '../api/client';
 import { connect } from '../state/session';
 import { Logo } from './Logo';
 
-export function Login() {
+/** The sign-in form: on its own page, or in the landing page's dialog. */
+export function LoginForm({ note, onCancel }: { note?: ReactNode; onCancel?: () => void }) {
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -24,11 +25,10 @@ export function Login() {
   };
 
   return (
-    <div className="login">
       <form className="login-card" onSubmit={submit} aria-labelledby="login-title">
         <Logo size={44} />
         <h1 id="login-title">Gjallarhorn console</h1>
-        <p className="muted">Watch every agent call crossing your Bifrost gateway, stop attacks and lock agents.</p>
+        {note ?? <p className="muted">Watch every agent call crossing your Bifrost gateway, stop attacks and lock agents.</p>}
         <label htmlFor="token">Admin token</label>
         <input
           id="token"
@@ -52,7 +52,19 @@ export function Login() {
         <button className="btn primary" type="submit" disabled={busy || !token.trim()}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
+        {onCancel && (
+          <button className="btn ghost" type="button" onClick={onCancel}>
+            Back
+          </button>
+        )}
       </form>
+  );
+}
+
+export function Login() {
+  return (
+    <div className="login">
+      <LoginForm />
     </div>
   );
 }

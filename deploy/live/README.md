@@ -22,8 +22,10 @@ cp deploy/live/env.example deploy/live/.env
 sudo docker compose -f deploy/live/compose.yaml --env-file deploy/live/.env up -d --build
 ```
 
-The first start builds everything (10–15 minutes). Then open `https://<your domain>/` and sign in
-with the admin token from `.env`.
+The first start builds everything (10–15 minutes). Then open `https://<your domain>/` and click
+**Start the demo**. The demo config has `control.public_demo` on, so visitors (the judges) need no
+token: the console fetches it from `/v1/demo-access`. To require the token instead, remove
+`"public_demo": true` from `deploy/demo/config.json` and share the admin token from `.env`.
 
 Reset it every hour, so visitors' lockdowns and policy edits don't pile up:
 
@@ -33,8 +35,8 @@ Reset it every hour, so visitors' lockdowns and policy edits don't pile up:
 
 ## What visitors can and can't do
 
-- **The admin token is shared** with whoever you give it to (for example, the judges in the
-  submission). With it, a visitor can launch attacks, lock agents, edit the policy and ask the
+- **Anyone who opens the page gets full control** (through `public_demo`, or the shared admin
+  token if you turned that off). With it, a visitor can launch attacks, lock agents, edit the policy and ask the
   co-pilot. That is the point of the demo. The hourly reset undoes it.
 - **Nothing real is behind it.** The demo's "company" is simulated: the refunds, emails and shell
   commands are recorded in a ledger and never happen, the model is a mock, and no outside

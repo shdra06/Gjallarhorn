@@ -18,6 +18,7 @@ export function AirspaceView() {
   const reduced = useStore((s) => s.reducedMotion);
   const selected = useStore((s) => s.selected);
   const replay = useStore((s) => s.replay);
+  const theme = useStore((s) => s.theme);
 
   // Three.js is loaded on demand, so signing in and the other views don't wait for it.
   useEffect(() => {
@@ -29,6 +30,7 @@ export function AirspaceView() {
         if (gone || !host.current) return;
         space.current = new Airspace(host.current, {
           reducedMotion: store.get().reducedMotion,
+          theme,
           onSelectNode: (id) => store.select({ kind: 'node', id }),
           onSelectFlight: (seq) => store.select({ kind: 'incident', seq }),
         });
@@ -47,7 +49,8 @@ export function AirspaceView() {
       space.current = null;
       setReady(false);
     };
-  }, [failed]);
+    // A new theme rebuilds the scene with its own colours.
+  }, [failed, theme]);
 
   useEffect(() => {
     const s = space.current;

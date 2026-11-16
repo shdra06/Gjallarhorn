@@ -4,7 +4,7 @@ import { DialogHost } from './components/Dialog';
 import { Drawer } from './components/Drawer';
 import { HelpDialog } from './components/HelpDialog';
 import { LiveAnnouncer } from './components/LiveAnnouncer';
-import { Login } from './components/Login';
+import { Landing } from './components/Landing';
 import { PolicyView } from './components/PolicyView';
 import { TableView } from './components/TableView';
 import { Toasts } from './components/Toasts';
@@ -64,7 +64,7 @@ export function App() {
       </div>
     );
   }
-  if (!signedIn) return <Login />;
+  if (!signedIn) return <Landing />;
 
   return (
     <div className={`app view-${view}`}>

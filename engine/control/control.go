@@ -49,6 +49,10 @@ type Options struct {
 	// such as the attack lab's -serve mode, so the console can start demo traffic. Demo
 	// environments only.
 	DemoDriver string
+	// PublicDemo lets anyone who opens the console start the demo without typing the token:
+	// GET /v1/demo-access hands out the admin token. For public demo environments only,
+	// where nothing real is behind the gateway and the state resets regularly.
+	PublicDemo bool
 }
 
 // maxCopilotCalls bounds concurrent co-pilot requests, which can be slow and cost money.
@@ -75,6 +79,7 @@ func NewHandler(e *engine.Engine, opts Options) (http.Handler, error) {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/health", s.health) // public, but details only with the token
+	mux.HandleFunc("GET /v1/demo-access", s.demoAccess)
 	mux.Handle("GET /v1/principals", s.auth(s.principals))
 	mux.Handle("GET /v1/lockdowns", s.auth(s.listLockdowns))
 	mux.Handle("POST /v1/lockdowns", s.auth(s.lock))
@@ -195,6 +200,16 @@ func splitErrors(err error) []string {
 
 // health is public so load balancers can probe it. Counts that hint at what is going on
 // (events, lockdowns) are only shown to callers with the admin token.
+// demoAccess tells the console whether this is a public demo, and if so gives it the token,
+// so a visitor can start the demo with one click. Off by default.
+func (s *server) demoAccess(w http.ResponseWriter, _ *http.Request) {
+	if !s.opts.PublicDemo {
+		writeJSON(w, http.StatusOK, map[string]any{"public_demo": false})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"public_demo": true, "token": s.opts.AdminToken})
+}
+
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"status": "ok", "version": s.opts.Version}
 	if s.authorized(r) {

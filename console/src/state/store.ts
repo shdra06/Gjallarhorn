@@ -1,6 +1,7 @@
 import { useRef, useSyncExternalStore } from 'react';
 import type { CopilotInfo, Lockdown, Principal, RecEvent } from '../api/types';
 import { collectNodes, type NodeInfo } from '../model/flights';
+import { applyTheme, resolveTheme, savedTheme, saveTheme, type Theme, type ThemePref } from './theme';
 
 export type View = 'airspace' | 'table' | 'policy';
 export type Conn = 'idle' | 'connecting' | 'live' | 'offline' | 'unauthorized';
@@ -36,6 +37,10 @@ export interface State {
   view: View;
   selected: Selection;
   reducedMotion: boolean;
+  /** What the user chose: light, dark, or follow the system. */
+  themePref: ThemePref;
+  /** The theme in use right now. */
+  theme: Theme;
   toasts: Toast[];
   demo: boolean;
   copilot: CopilotInfo | null;
@@ -67,6 +72,8 @@ export function initialState(): State {
     view: 'airspace',
     selected: null,
     reducedMotion: prefersReducedMotion(),
+    themePref: savedTheme(),
+    theme: resolveTheme(savedTheme()),
     toasts: [],
     demo: false,
     copilot: null,
@@ -174,8 +181,24 @@ export class Store {
     this.set({ reducedMotion: on });
   }
 
+  setTheme(pref: ThemePref): void {
+    saveTheme(pref);
+    const theme = resolveTheme(pref);
+    applyTheme(theme);
+    this.set({ themePref: pref, theme });
+  }
+
+  /** Called when the system theme changes; matters only while following the system. */
+  syncSystemTheme(): void {
+    if (this.state.themePref !== 'system') return;
+    const theme = resolveTheme('system');
+    applyTheme(theme);
+    if (theme !== this.state.theme) this.set({ theme });
+  }
+
   reset(): void {
-    this.state = { ...initialState(), reducedMotion: this.state.reducedMotion };
+    const { reducedMotion, themePref, theme } = this.state;
+    this.state = { ...initialState(), reducedMotion, themePref, theme };
     for (const l of this.listeners) l();
   }
 }

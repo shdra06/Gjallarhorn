@@ -55,6 +55,9 @@ func Init(config any) error {
 	if err != nil {
 		return fmt.Errorf("gjallarhorn: %w", err)
 	}
+	if c.Control.PublicDemo {
+		fmt.Fprintln(os.Stderr, "gjallarhorn: WARNING control.public_demo is on: anyone who can open the console gets the admin token. Use it only for a public demo with nothing real behind it.")
+	}
 	if c.AcceptLabels {
 		fmt.Fprintln(os.Stderr, "gjallarhorn: WARNING accept_labels is on: any caller can label its own traffic as attack or benign, which feeds replay verdicts and co-pilot proofs. Use it in test environments only.")
 	}
@@ -65,7 +68,7 @@ func Init(config any) error {
 	if !c.Control.Disabled {
 		h, err := control.NewHandler(e, control.Options{AdminToken: c.Control.AdminToken,
 			AllowedOrigins: c.Control.AllowedOrigins, Version: Version, Copilot: copilot.NewLLM(c.Copilot),
-			ConsoleDir: c.Control.ConsoleDir, DemoDriver: c.Control.DemoDriver})
+			ConsoleDir: c.Control.ConsoleDir, DemoDriver: c.Control.DemoDriver, PublicDemo: c.Control.PublicDemo})
 		if err != nil {
 			e.Close()
 			return fmt.Errorf("gjallarhorn: %w", err)

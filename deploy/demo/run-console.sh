@@ -38,6 +38,6 @@ Gjallarhorn is running.
   Admin token:  ${ADMIN}
   Gateway:      http://localhost:${GW}/  (Bifrost with the Gjallarhorn plugin)
 
-In the console, open "Demo traffic", turn on normal work, then launch an attack.
+In the console, click "Start the demo", then launch an attack from the demo panel.
 Stop it with: bash deploy/demo/run-console.sh stop
 MSG

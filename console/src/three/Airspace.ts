@@ -7,24 +7,75 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import type { Flight, FlightKind, NodeInfo, NodeRole } from '../model/flights';
 import { columns, extent, layout, type Pos } from '../model/layout';
 
-export const palette = {
-  background: 0x060a13,
-  grid: 0x16304a,
-  gridMinor: 0x0c1a2b,
-  allowed: 0x38e1ff,
-  blocked: 0xff3b5c,
-  flagged: 0xffb020,
-  external: 0xff9f43,
-  locked: 0xff3b5c,
-  role: { origin: 0xb9a7ff, agent: 0x5eead4, tool: 0xcbd5e1, model: 0x9fb0ff } as Record<NodeRole, number>,
+export interface Palette {
+  background: number;
+  grid: number;
+  gridMinor: number;
+  allowed: number;
+  blocked: number;
+  flagged: number;
+  external: number;
+  locked: number;
+  role: Record<NodeRole, number>;
+  pad: number;
+  highlight: number;
+  ambient: number;
+  ambientIntensity: number;
+  sweepOpacity: number;
+  fog: number;
+  /** Glows add light on a dark sky; on a light one they would vanish, so they are painted over. */
+  blend: THREE.Blending;
+}
+
+export const palettes: Record<'dark' | 'light', Palette> = {
+  dark: {
+    background: 0x060a13,
+    grid: 0x16304a,
+    gridMinor: 0x0c1a2b,
+    allowed: 0x38e1ff,
+    blocked: 0xff3b5c,
+    flagged: 0xffb020,
+    external: 0xff9f43,
+    locked: 0xff3b5c,
+    role: { origin: 0xb9a7ff, agent: 0x5eead4, tool: 0xcbd5e1, model: 0x9fb0ff },
+    pad: 0x0f1a2b,
+    highlight: 0xffffff,
+    ambient: 0x8090c0,
+    ambientIntensity: 1.3,
+    sweepOpacity: 0.045,
+    fog: 0.0085,
+    blend: THREE.AdditiveBlending,
+  },
+  light: {
+    background: 0xf5f7fa,
+    grid: 0xc7d0dc,
+    gridMinor: 0xe2e7ee,
+    allowed: 0x0284c7,
+    blocked: 0xdc2626,
+    flagged: 0xd97706,
+    external: 0xea580c,
+    locked: 0xdc2626,
+    role: { origin: 0x7c3aed, agent: 0x0d9488, tool: 0x64748b, model: 0x4f46e5 },
+    pad: 0xe2e8f0,
+    highlight: 0x0f172a,
+    ambient: 0xffffff,
+    ambientIntensity: 2.2,
+    sweepOpacity: 0.02,
+    fog: 0.004,
+    blend: THREE.NormalBlending,
+  },
 };
 
-const kindColor: Record<FlightKind, number> = { allowed: palette.allowed, blocked: palette.blocked, flagged: palette.flagged };
+/** The colours of the scene being drawn; set by the constructor from the theme. */
+export let palette: Palette = palettes.dark;
+
+const kindColor = (k: FlightKind): number => ({ allowed: palette.allowed, blocked: palette.blocked, flagged: palette.flagged })[k];
 
 export interface AirspaceOptions {
   onSelectNode: (id: string) => void;
   onSelectFlight: (seq: number) => void;
   reducedMotion: boolean;
+  theme?: 'dark' | 'light';
 }
 
 interface NodeView {
@@ -152,10 +203,11 @@ export class Airspace {
     this.container = container;
     this.opts = opts;
     this.reduced = opts.reducedMotion;
+    palette = palettes[opts.theme ?? 'dark'];
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMapping = opts.theme === 'light' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     this.renderer.domElement.className = 'airspace-canvas';
     container.appendChild(this.renderer.domElement);
@@ -165,7 +217,7 @@ export class Airspace {
     container.appendChild(this.labels.domElement);
 
     this.scene.background = new THREE.Color(palette.background);
-    this.scene.fog = new THREE.FogExp2(palette.background, 0.0085);
+    this.scene.fog = new THREE.FogExp2(palette.background, palette.fog);
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 600);
     this.camera.position.set(0, 48, 70);
@@ -177,7 +229,7 @@ export class Airspace {
     this.controls.maxDistance = 170;
     this.controls.addEventListener('start', () => (this.userMoved = true));
 
-    this.scene.add(new THREE.AmbientLight(0x8090c0, 1.3));
+    this.scene.add(new THREE.AmbientLight(palette.ambient, palette.ambientIntensity));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
     sun.position.set(20, 60, 30);
     this.scene.add(sun);
@@ -211,7 +263,7 @@ export class Airspace {
     }
     const sweep = new THREE.Mesh(
       new THREE.CircleGeometry(72, 48, 0, 0.55),
-      new THREE.MeshBasicMaterial({ color: palette.allowed, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color: palette.allowed, transparent: true, opacity: palette.sweepOpacity, side: THREE.DoubleSide, depthWrite: false }),
     );
     sweep.rotation.x = -Math.PI / 2;
     sweep.position.y = 0.03;
@@ -288,7 +340,7 @@ export class Airspace {
     const group = new THREE.Group();
     const pad = new THREE.Mesh(
       new THREE.CylinderGeometry(2.3, 2.6, 0.35, 6),
-      new THREE.MeshStandardMaterial({ color: 0x0f1a2b, emissive: color, emissiveIntensity: 0.12, metalness: 0.4, roughness: 0.5 }),
+      new THREE.MeshStandardMaterial({ color: palette.pad, emissive: color, emissiveIntensity: 0.12, metalness: 0.4, roughness: 0.5 }),
     );
     pad.position.y = 0.18;
     group.add(pad);
@@ -303,7 +355,7 @@ export class Airspace {
 
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(0.07, 0.07, 9, 8, 1, true),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.16, blending: palette.blend, depthWrite: false }),
     );
     beam.position.y = 4.5;
     group.add(beam);
@@ -400,7 +452,7 @@ export class Airspace {
     if (pts.length < 6) return;
     const g = new LineGeometry();
     g.setPositions(pts);
-    const m = new LineMaterial({ color: 0xffffff, linewidth: 4, transparent: true, opacity: 0.55, depthWrite: false });
+    const m = new LineMaterial({ color: palette.highlight, linewidth: 4, transparent: true, opacity: 0.55, depthWrite: false });
     m.resolution.copy(this.resolution);
     this.highlightLine = new Line2(g, m);
     this.scene.add(this.highlightLine);
@@ -463,7 +515,7 @@ export class Airspace {
     const curve = this.curve(a, b, ((f.seq % 5) - 2) * 0.6);
     const pts: number[] = [];
     for (const p of curve.getPoints(SEGMENTS)) pts.push(p.x, p.y, p.z);
-    const color = kindColor[f.kind];
+    const color = kindColor(f.kind);
     const stopAt = f.kind === 'blocked' ? 0.6 : 1;
 
     const g = new LineGeometry();
@@ -483,7 +535,7 @@ export class Airspace {
       this.scene.add(rest);
     }
 
-    const head = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow, color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const head = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow, color, transparent: true, blending: palette.blend, depthWrite: false }));
     head.scale.setScalar(f.kind === 'allowed' ? 2.2 : 3);
     head.position.copy(a);
     head.visible = !this.reduced;
@@ -532,14 +584,14 @@ export class Airspace {
     const at = v.curve.getPoint(v.stopAt);
     if (f.kind === 'blocked' || f.kind === 'flagged') {
       if (!this.reduced) {
-        const burst = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.ring, color: kindColor[f.kind], transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        const burst = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.ring, color: kindColor(f.kind), transparent: true, blending: palette.blend, depthWrite: false }));
         burst.position.copy(at);
         burst.scale.setScalar(1);
         this.scene.add(burst);
         v.burst = burst;
         v.burstStart = this.now();
       }
-      const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow, color: kindColor[f.kind], transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow, color: kindColor(f.kind), transparent: true, opacity: 0.9, blending: palette.blend, depthWrite: false }));
       flare.position.copy(at);
       flare.scale.setScalar(f.kind === 'blocked' ? 5.5 : 4);
       this.scene.add(flare);

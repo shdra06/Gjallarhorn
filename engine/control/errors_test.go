@@ -134,6 +134,17 @@ func TestConsoleNotBuiltAndHead(t *testing.T) {
 	}
 }
 
+func TestPublicDemoAccess(t *testing.T) {
+	off := consoleServer(t, Options{})
+	if _, body := get(t, off.URL+"/v1/demo-access", false); !strings.Contains(body, `"public_demo": false`) || strings.Contains(body, token) {
+		t.Fatalf("off by default, and never shows the token: %s", body)
+	}
+	on := consoleServer(t, Options{PublicDemo: true})
+	if _, body := get(t, on.URL+"/v1/demo-access", false); !strings.Contains(body, `"public_demo": true`) || !strings.Contains(body, token) {
+		t.Fatalf("public demo hands out the token: %s", body)
+	}
+}
+
 func TestHealthHidesCountsWithoutTheToken(t *testing.T) {
 	srv, e := newServer(t)
 	e.Check(engine.Request{Plane: policy.PlaneLLM, Target: "m", VirtualKey: "vk-priya"})

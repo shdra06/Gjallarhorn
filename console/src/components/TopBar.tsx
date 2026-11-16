@@ -2,6 +2,7 @@ import { act, signOut } from '../state/session';
 import { store, useStore, type View } from '../state/store';
 import { confirmAction } from './Dialog';
 import { Logo } from './Logo';
+import { ThemeToggle } from './ThemeToggle';
 
 const tabs: { id: View; label: string; key: string }[] = [
   { id: 'airspace', label: 'Airspace', key: '1' },
@@ -71,6 +72,7 @@ export function TopBar() {
           <span className="dot" aria-hidden="true" />
           {connText[conn]}
         </span>
+        <ThemeToggle />
         <button className="icon-btn" aria-pressed={reduced} title="Reduce motion" aria-label="Reduce motion" onClick={() => store.setReducedMotion(!reduced)}>
           {reduced ? '◼' : '◆'}
         </button>

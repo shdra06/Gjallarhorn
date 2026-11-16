@@ -60,6 +60,9 @@ type ControlConfig struct {
 	ConsoleDir string `json:"console_dir,omitempty"`
 	// DemoDriver forwards /demo/ to a demo traffic driver (demo environments only).
 	DemoDriver string `json:"demo_driver,omitempty"`
+	// PublicDemo lets visitors start the demo from the console's landing page without the
+	// token (the token is handed out). Public demo environments only.
+	PublicDemo bool `json:"public_demo,omitempty"`
 }
 
 // ParseConfig converts the untyped plugin config Bifrost passes to Init.
